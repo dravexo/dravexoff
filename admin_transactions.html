@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transaction History - Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<link rel="icon" href="favicon.jpg" type="image/jpeg">
+<link rel="shortcut icon" href="favicon.jpg" type="image/jpeg">
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+    body { background: #0f0c29; color: white; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+    
+    /* Navbar */
+    .nav-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 15px 5%; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .nav-logo { font-family: 'Orbitron', sans-serif; font-size: 1.4rem; color: #20bf55; text-decoration: none; }
+    .nav-links a { color: #ccc; text-decoration: none; margin-left: 20px; font-weight: 600; transition: 0.3s; }
+    .nav-links a:hover { color: #20bf55; }
+
+    .container { width: 90%; max-width: 1200px; margin-top: 30px; }
+    
+    h1 { font-family: 'Orbitron', sans-serif; margin-bottom: 20px; color: #fff; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 15px; margin-bottom: 20px; }
+    .tab-btn { padding: 10px 25px; background: rgba(255,255,255,0.1); border: none; color: #ccc; cursor: pointer; border-radius: 8px; font-weight: bold; transition: 0.3s; }
+    .tab-btn.active { background: #20bf55; color: white; }
+    .tab-btn:hover { background: rgba(255,255,255,0.2); }
+
+    /* Table */
+    .table-card { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 800px; }
+    th, td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    th { color: #20bf55; font-size: 0.9rem; text-transform: uppercase; background: rgba(0,0,0,0.2); }
+    td { font-size: 0.9rem; color: #ddd; }
+    tr:hover { background: rgba(255,255,255,0.05); }
+
+    .status-pending { color: #f1c40f; font-weight: bold; }
+    .status-approved { color: #20bf55; font-weight: bold; }
+    .status-rejected { color: #ff4757; font-weight: bold; }
+    
+    .copy-btn { background: transparent; border: 1px solid #555; color: #aaa; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; margin-left: 5px; }
+    .copy-btn:hover { border-color: #fff; color: #fff; }
+
+    .back-link { display: inline-block; margin-top: 20px; color: #01baef; text-decoration: none; }
+</style>
+</head>
+<body>
+
+    <nav class="nav-bar">
+        <a href="dashboard.html" class="nav-logo">DRAVEXO ADMIN</a>
+        <div class="nav-links">
+            <a href="dashboard.html">📊 Dashboard</a>
+            <a href="index.html">🏠 Home</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Transaction History</h1>
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('deposits')">📥 Deposits</button>
+            <button class="tab-btn" onclick="switchTab('withdrawals')">💸 Withdrawals</button>
+        </div>
+
+        <input type="text" id="search-input" placeholder="🔍 Search UID, UPI or Amount..." style="width:100%; padding:12px; margin-bottom:20px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; border-radius:8px; outline:none;">
+
+        <!-- Deposits Table -->
+        <div id="deposits-view" class="table-card">
+            <h3 style="margin-bottom:15px; color:#20bf55;">Recent Deposits</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>User UID</th>
+                        <th>Amount</th>
+                        <th>UTR / Ref ID</th>
+                        <th>Status</th>
+                        <th>Method</th>
+                    </tr>
+                </thead>
+                <tbody id="deposits-body">
+                    <tr><td colspan="6" style="text-align:center;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Withdrawals Table -->
+        <div id="withdrawals-view" class="table-card" style="display:none;">
+            <h3 style="margin-bottom:15px; color:#ff4757;">Recent Withdrawals</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>User UID</th>
+                        <th>Requested</th>
+                        <th>Fee</th>
+                        <th>To Pay</th>
+                        <th>UPI ID</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="withdrawals-body">
+                    <tr><td colspan="7" style="text-align:center;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <a href="dashboard.html" class="back-link">← Back to Dashboard</a>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+        import { getDatabase, ref, onValue, query, limitToLast } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Tab Switching
+        window.switchTab = (tab) => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.table-card').forEach(c => c.style.display = 'none');
+            
+            if(tab === 'deposits') {
+                document.querySelector('button[onclick="switchTab(\'deposits\')"]').classList.add('active');
+                document.getElementById('deposits-view').style.display = 'block';
+            } else {
+                document.querySelector('button[onclick="switchTab(\'withdrawals\')"]').classList.add('active');
+                document.getElementById('withdrawals-view').style.display = 'block';
+            }
+        };
+
+        // Search Functionality
+        document.getElementById('search-input').addEventListener('keyup', (e) => {
+            const term = e.target.value.toLowerCase();
+            const activeTableId = document.getElementById('deposits-view').style.display !== 'none' ? 'deposits-body' : 'withdrawals-body';
+            const rows = document.querySelectorAll(`#${activeTableId} tr`);
+            rows.forEach(row => {
+                row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+            });
+        });
+
+        // Load Deposits
+        const depositsRef = query(ref(db, 'deposits'), limitToLast(100));
+        onValue(depositsRef, (snapshot) => {
+            const tbody = document.getElementById('deposits-body');
+            tbody.innerHTML = '';
+            if(snapshot.exists()) {
+                const data = Object.values(snapshot.val()).sort((a,b) => b.timestamp - a.timestamp);
+                data.forEach(d => {
+                    const date = new Date(d.timestamp).toLocaleString();
+                    const statusClass = `status-${d.status}`;
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${date}</td>
+                            <td>${d.uid} <button class="copy-btn" onclick="navigator.clipboard.writeText('${d.uid}')">Copy</button></td>
+                            <td style="font-weight:bold;">₹${d.amount}</td>
+                            <td>${d.utr}</td>
+                            <td class="${statusClass}">${d.status.toUpperCase()}</td>
+                            <td>${d.method || 'Manual'}</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">No deposits found.</td></tr>';
+            }
+        });
+
+        // Load Withdrawals
+        const withdrawalsRef = query(ref(db, 'withdrawals'), limitToLast(100));
+        onValue(withdrawalsRef, (snapshot) => {
+            const tbody = document.getElementById('withdrawals-body');
+            tbody.innerHTML = '';
+            if(snapshot.exists()) {
+                const data = Object.values(snapshot.val()).sort((a,b) => b.timestamp - a.timestamp);
+                data.forEach(w => {
+                    const date = new Date(w.timestamp).toLocaleString();
+                    const statusClass = `status-${w.status}`;
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${date}</td>
+                            <td>${w.uid} <button class="copy-btn" onclick="navigator.clipboard.writeText('${w.uid}')">Copy</button></td>
+                            <td>₹${w.amountRequested}</td>
+                            <td style="color:#ff4757;">-₹${w.fee}</td>
+                            <td style="color:#20bf55; font-weight:bold;">₹${w.amount}</td>
+                            <td>${w.upi} <button class="copy-btn" onclick="navigator.clipboard.writeText('${w.upi}')">Copy</button></td>
+                            <td class="${statusClass}">${w.status.toUpperCase()}</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">No withdrawals found.</td></tr>';
+            }
+        });
+    </script>
+</body>
+</html>

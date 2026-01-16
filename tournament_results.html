@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tournament Results - DRAVEXO ESPORTS</title>
+<meta name="description" content="Check past tournament results, winners, and top players of Dravexo Free Fire Tournaments.">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<link rel="icon" href="favicon.jpg" type="image/jpeg">
+<style>
+    :root {
+        --primary: #ffcc00;
+        --accent: #ff4757;
+        --bg: #0f0c29;
+        --card-bg: rgba(255, 255, 255, 0.05);
+        --text: #ffffff;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+    body {
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    /* Navbar */
+    .nav-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.8); padding: 15px 5%; position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .nav-logo { font-family: 'Orbitron', sans-serif; font-size: 1.5rem; color: var(--primary); text-decoration: none; text-transform: uppercase; letter-spacing: 2px; }
+    .nav-links a { color: #ccc; text-decoration: none; margin-left: 20px; font-weight: 600; transition: 0.3s; }
+    .nav-links a:hover { color: var(--primary); }
+
+    /* Hero Section */
+    .hero {
+        text-align: center;
+        padding: 60px 20px;
+        background: radial-gradient(circle at center, #302b63 0%, #0f0c29 70%);
+        width: 100%;
+    }
+    h1 { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; margin-bottom: 10px; color: var(--primary); text-shadow: 0 0 20px rgba(255, 204, 0, 0.5); }
+    p { color: #aaa; max-width: 600px; margin: 0 auto 30px; }
+
+    .container {
+        width: 90%;
+        max-width: 1000px;
+        margin: 20px auto;
+        display: grid;
+        gap: 30px;
+    }
+
+    .card {
+        background: var(--card-bg);
+        padding: 30px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .card h2 { font-family: 'Orbitron', sans-serif; margin-bottom: 20px; color: var(--accent); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+
+    /* Table Styles */
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 600px; }
+    th, td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    th { color: var(--primary); font-size: 0.9rem; text-transform: uppercase; background: rgba(0,0,0,0.2); }
+    td { font-size: 0.95rem; color: #ddd; }
+    tr:hover { background: rgba(255,255,255,0.05); }
+    
+    .winner-badge { background: linear-gradient(45deg, #ffd700, #ffaa00); color: #000; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; margin-right: 5px; }
+    .kill-badge { color: #ff4757; font-weight: bold; }
+    
+    .back-btn { display: inline-block; margin-top: 20px; color: #ccc; text-decoration: none; border: 1px solid #ccc; padding: 10px 20px; border-radius: 30px; transition: 0.3s; }
+    .back-btn:hover { background: white; color: black; }
+
+    @media (max-width: 768px) {
+        .nav-links { display: none; }
+        h1 { font-size: 1.8rem; }
+    }
+</style>
+</head>
+<body>
+
+    <nav class="nav-bar">
+        <a href="index.html" class="nav-logo">DRAVEXO <span style="color:white; font-size:0.8rem;">ESPORTS</span></a>
+        <div class="nav-links">
+            <a href="index.html">🏠 Home</a>
+            <a href="free_fire_tournament.html">🔥 Tournament</a>
+            <a href="tournament_results.html" style="color:var(--primary);">🏆 Results</a>
+            <a href="contact.html">📞 Contact</a>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <h1>HALL OF FAME</h1>
+        <p>Celebrating the champions and top fraggers of Dravexo Tournaments.</p>
+    </div>
+
+    <div class="container">
+        
+        <!-- Recent Winners (Payout Logs) -->
+        <div class="card">
+            <h2>🏆 Recent Victories</h2>
+            <div class="table-container">
+                <table id="winnersTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Tournament</th>
+                            <th>Winner / Team</th>
+                            <th>Kills</th>
+                            <th>Prize Won</th>
+                        </tr>
+                    </thead>
+                    <tbody id="winnersBody">
+                        <tr><td colspan="5" style="text-align:center; padding:20px;">Loading results...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Top Players (Stats) -->
+        <div class="card">
+            <h2>💀 Top Fraggers (All Time)</h2>
+            <div class="table-container">
+                <table id="topPlayersTable">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Player UID</th>
+                            <th>Matches</th>
+                            <th>Wins</th>
+                            <th>Total Kills</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topPlayersBody">
+                        <tr><td colspan="5" style="text-align:center; padding:20px;">Loading stats...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div style="text-align:center; margin-bottom: 40px;">
+            <a href="free_fire_tournament.html" class="back-btn">← Back to Tournament Page</a>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+        import { getDatabase, ref, onValue, query, limitToLast, orderByChild } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // 1. Load Recent Winners (from Payout Logs)
+        const payoutsRef = query(ref(db, 'tournaments/payout_logs'), limitToLast(20));
+        onValue(payoutsRef, (snapshot) => {
+            const tbody = document.getElementById('winnersBody');
+            tbody.innerHTML = '';
+            if (snapshot.exists()) {
+                const logs = Object.values(snapshot.val()).sort((a, b) => b.timestamp - a.timestamp);
+                logs.forEach(log => {
+                    const date = new Date(log.timestamp).toLocaleDateString();
+                    tbody.innerHTML += `<tr><td>${date}</td><td>${log.tournament}</td><td><span class="winner-badge">WINNER</span> ${log.teamName}</td><td class="kill-badge">${log.kills}</td><td style="color:#20bf55; font-weight:bold;">₹${log.amount}</td></tr>`;
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">No results found yet.</td></tr>';
+            }
+        });
+
+        // 2. Load Top Players (from Player Stats)
+        const statsRef = query(ref(db, 'tournaments/player_stats'), orderByChild('kills'), limitToLast(10));
+        onValue(statsRef, (snapshot) => {
+            const tbody = document.getElementById('topPlayersBody');
+            tbody.innerHTML = '';
+            if (snapshot.exists()) {
+                const players = [];
+                snapshot.forEach(child => players.push({uid: child.key, ...child.val()}));
+                players.sort((a, b) => b.kills - a.kills); // Sort descending by kills
+
+                players.forEach((p, index) => {
+                    let rankIcon = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
+                    tbody.innerHTML += `<tr><td>${rankIcon}</td><td>${p.uid}</td><td>${p.matches || 0}</td><td>${p.wins || 0}</td><td class="kill-badge">${p.kills || 0}</td></tr>`;
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">No player stats available.</td></tr>';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,2005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Free Fire Tournament - DRAVEXO</title>
+<meta name="description" content="Join Dravexo Free Fire Tournaments. Register your squad and compete for prizes.">
+<!-- Security: Content Security Policy -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' https: data: blob:; connect-src 'self' https: wss:;">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<link rel="icon" href="favicon.jpg" type="image/jpeg">
+<link rel="shortcut icon" href="favicon.jpg" type="image/jpeg">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8372917146289765"
+     crossorigin="anonymous"></script>
+<style>
+    *{margin:0;padding:0;box-sizing:border-box; font-family: 'Inter', Arial, sans-serif;}
+    body{background:#0b0f1a;color:#fff;padding-bottom: 70px;}
+
+    /* HEADER */
+    .header{display:flex;justify-content:space-between;padding:15px;align-items:center;background:#0b0f1a;position:sticky;top:0;z-index:100;}
+    .logo{color:#22c55e;font-weight:bold;font-size:20px;font-family:'Orbitron', sans-serif;}
+    .wallet{background:#111827;padding:8px 14px;border-radius:20px;font-size:14px;border:1px solid #1f2933; cursor: pointer;}
+    .refresh-btn{background:none; border:none; color:#22c55e; font-size:22px; cursor:pointer; margin-right:10px; padding:0 5px;}
+
+    /* QUICK ICONS */
+    .quick{display:flex;justify-content:space-around;margin:10px 0;}
+    .qbox{background:#111827;padding:10px;border-radius:14px;text-align:center;width:22%;font-size:12px;cursor:pointer;border:1px solid #1f2933;transition:0.2s;}
+    .qbox:active{transform:scale(0.95);}
+
+    /* BANNER */
+    .banner{margin:15px;background:linear-gradient(135deg,#22c55e,#16a34a);padding:20px;border-radius:18px;position:relative;overflow:hidden;box-shadow:0 10px 20px rgba(34, 197, 94, 0.2);}
+    .banner h3{font-size:1.5rem;margin-bottom:5px;}
+    .banner p{font-size:0.9rem;opacity:0.9;}
+    .banner button{margin-top:15px;padding:10px 20px;border:none;border-radius:20px;font-weight:bold;background:#fff;color:#16a34a;cursor:pointer;}
+
+    /* NOTICE */
+    .notice{margin:15px;background:#1f2933;padding:12px;border-radius:12px;font-size:13px;color:#ccc;border-left:4px solid #22c55e;}
+
+    /* FILTER */
+    .filter{display:flex;gap:10px;padding:0 15px;overflow-x:auto;scrollbar-width:none;}
+    .filter div{padding:8px 16px;border-radius:20px;background:#111827;font-size:13px;white-space:nowrap;border:1px solid #1f2933;cursor:pointer;}
+    .filter div.active{background:#22c55e;color:#000;font-weight:bold;border-color:#22c55e;}
+
+    /* CARD */
+    .section{padding:15px;}
+    .section h3{margin-bottom:15px;font-size:18px;display:flex;justify-content:space-between;align-items:center;}
+    
+    .card{background:#111827;border-radius:16px;padding:15px;margin-bottom:12px;border:1px solid #1f2933;position:relative;}
+    .card-top{display:flex;justify-content:space-between;font-size:13px;opacity:.7;margin-bottom:8px;}
+    .card h4{margin:6px 0;font-size:16px;}
+    .join{background:#22c55e;border:none;padding:8px 20px;border-radius:20px;font-weight:bold;color:#000;cursor:pointer;font-size:13px;margin-top:10px;}
+    .join:hover{background:#16a34a;}
+
+    /* LIVE */
+    .live{border:1px solid #ef4444;background:rgba(239, 68, 68, 0.05);}
+    .live-badge{background:#ef4444;color:white;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:bold;vertical-align:middle;}
+
+    /* NAV */
+    .nav{position:fixed;bottom:0;width:100%;display:flex;justify-content:space-around;background:#020617;padding:12px 0;font-size:10px;border-top:1px solid #1f2933;z-index:1000;}
+    .nav-item{text-align:center;color:#64748b;cursor:pointer;}
+    .nav-item.active{color:#22c55e;}
+    .nav-icon{font-size:18px;margin-bottom:4px;display:block;}
+
+    /* --- UTILITY & MODAL STYLES (Kept from original) --- */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+    .modal-content { background: #111827; padding: 25px; border-radius: 20px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; border: 1px solid #22c55e; position: relative; color: #ddd; }
+    .close-btn { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #ef4444; background: none; border: none; }
+    
+    /* Form Inputs */
+    input, select { width: 100%; padding: 12px; background: #1f2933; border: 1px solid #374151; border-radius: 10px; color: white; margin-bottom: 10px; outline: none; }
+    input:focus { border-color: #22c55e; }
+    .btn-full { width: 100%; padding: 14px; background: #22c55e; border: none; color: #000; font-weight: bold; border-radius: 12px; cursor: pointer; margin-top: 10px; }
+
+    /* Tabs Logic */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+</style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="logo">DRAVEXO</div>
+        <div style="display:flex; align-items:center;">
+            <button class="refresh-btn" onclick="window.location.reload()" title="Refresh Matches">↻</button>
+            <div class="wallet" onclick="navAction('wallet')">💰 <span id="headerWalletBalance">₹0</span></div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT AREA -->
+    <div id="mainContent">
+
+        <!-- HOME TAB -->
+        <div id="tab-home" class="tab-content active">
+            <!-- QUICK ACTIONS -->
+            <div class="quick">
+                <div class="qbox" onclick="navAction('profile')">🎮<br>My Matches</div>
+                <div class="qbox" onclick="navAction('wallet')">💰<br>Wallet</div>
+                <div class="qbox" onclick="window.location.href='tournament_results.html'">🏆<br>Leaderboard</div>
+                <div class="qbox" onclick="shareApp()">👥<br>Refer</div>
+            </div>
+
+            <!-- BANNER SLIDER -->
+            <div id="homeSlider" style="margin:15px; overflow:hidden; border-radius:18px;">
+                <!-- Default Banner (Will be replaced by JS if slides exist) -->
+                <div class="banner">
+                    <h3>Free Fire Mega Match</h3>
+                    <p>Win ₹1000 instantly • Daily Matches</p>
+                    <button onclick="navAction('join')">JOIN NOW</button>
+                </div>
+            </div>
+
+            <!-- TEXT NOTICES SLIDER (New) -->
+            <div id="noticeSlider" style="margin:0 15px 15px 15px; display:none; overflow-x:auto; white-space:nowrap; scrollbar-width:none; gap:10px;"></div>
+
+            <!-- NOTICE -->
+            <div class="notice">
+                📢 Room ID match se 10 min pehle milegi • No Hack ❌ • Instant Payout ✅
+            </div>
+
+            <!-- LIVE MATCH -->
+            <div class="section">
+                <h3>🔴 Live Match</h3>
+                <div class="card live">
+                    <div class="card-top">
+                        <span class="live-badge">LIVE</span>
+                        <span id="timer">Loading...</span>
+                    </div>
+                    <h4 id="nextMatchTitle">Loading...</h4>
+                    
+                    <!-- Room Info (Hidden until active) -->
+                    <div id="roomInfoDisplay" style="display:none; margin-top:10px; background:#1f2933; padding:10px; border-radius:8px; text-align:center;">
+                        <div style="color:#22c55e; font-weight:bold; margin-bottom:5px;">ROOM DETAILS</div>
+                        <div style="font-size:14px;">ID: <span id="liveRoomId" style="color:#fff;">Wait...</span></div>
+                        <div style="font-size:14px;">PASS: <span id="liveRoomPass" style="color:#fff;">Wait...</span></div>
+                        <button onclick="copyRoomId()" style="margin-top:5px; padding:4px 10px; background:#333; border:none; color:#ccc; border-radius:4px; cursor:pointer;">Copy</button>
+                    </div>
+
+                    <button class="join" onclick="navAction('join')">View Details</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- JOIN TAB (All Matches) -->
+        <div id="tab-join" class="tab-content">
+            <div class="section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h3>⚔️ Matches <span id="totalTourCount" style="font-size:0.8rem; color:#aaa; font-weight:normal;"></span></h3>
+                    <select id="joinMapFilter" onchange="window.renderTournaments()" style="width:auto; padding:5px; font-size:12px; background:#1f2933; color:white; border:1px solid #333; border-radius:5px; margin-bottom:0; outline:none;">
+                        <option value="All">All Maps</option>
+                        <option value="Bermuda">Bermuda</option>
+                        <option value="Bermuda Remastered">Bermuda Remastered</option>
+                        <option value="Kalahari">Kalahari</option>
+                        <option value="Purgatory">Purgatory</option>
+                        <option value="Alpine">Alpine</option>
+                        <option value="Nexterra">Nexterra</option>
+                    </select>
+                </div>
+                <div id="joinTournamentList"></div>
+            </div>
+        </div>
+
+        <!-- WALLET TAB -->
+        <div id="tab-wallet" class="tab-content">
+            <div class="section">
+                <h3>💰 My Wallet</h3>
+                <div class="card" style="text-align:center;">
+                    <div style="font-size:12px; color:#aaa;">Total Balance</div>
+                    <div id="walletBalance" style="font-size:32px; font-weight:bold; color:#fff; margin: 10px 0;">₹0</div>
+                    <!-- Pending Balance Indicator -->
+                    <div id="pendingBalanceDisplay" style="display:none; font-size:13px; color:#f1c40f; margin-bottom:10px;">
+                        (⏳ ₹<span id="pendingAmount">0</span> Pending)
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top:15px;">
+                        <button onclick="openAddMoneyModal()" class="btn-full" style="background:#22c55e;">Add Money</button>
+                        <button onclick="openWithdrawModal()" class="btn-full" style="background:#333; color:#fff;">Withdraw</button>
+                    </div>
+                </div>
+                
+                <h3>📜 History</h3>
+                <div class="card">
+                    <div id="walletHistoryList" style="max-height:300px; overflow-y:auto; font-size:12px;">
+                        <div style="text-align:center; color:#666;">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROFILE TAB -->
+        <div id="tab-profile" class="tab-content">
+            <div class="section">
+                <h3>👤 Profile</h3>
+            <!-- Player Identity -->
+            <div class="card" style="text-align:center;">
+                 <h4 id="welcomeMsg" style="color:#22c55e;">Welcome, Survivor</h4>
+                 
+                 <!-- GOOGLE LOGIN SECTION -->
+                 <div id="authSection" style="margin: 15px 0; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                     <div id="loggedOutView">
+                         <p style="color:#aaa; font-size:0.9rem; margin-bottom:10px;">Login with Google to join matches & use wallet</p>
+                         <button onclick="loginWithGoogle()" class="btn-full" style="background:white; color:#333; display:flex; align-items:center; justify-content:center; gap:10px;">
+                             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18"> Login with Google
+                         </button>
+                     </div>
+                     <div id="loggedInView" style="display:none;">
+                         <p style="color:#22c55e; font-size:0.9rem; margin-bottom:10px;">✅ Logged in as <span id="authEmail"></span></p>
+                         <button onclick="logoutGoogle()" style="background:#ff4757; border:none; color:white; padding:5px 15px; border-radius:20px; cursor:pointer; font-size:0.8rem;">Logout Google</button>
+                     </div>
+                 </div>
+
+                 <div id="loginBox" style="margin-top:10px;">
+                     <div style="margin-bottom:15px;">
+                         <label for="playerProfilePicInput" style="cursor:pointer; display:inline-block; position:relative;">
+                             <img id="previewProfilePic" src="https://placehold.co/100x100?text=Upload" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid #22c55e;">
+                             <div style="position:absolute; bottom:0; right:0; background:#22c55e; color:black; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:14px;">📷</div>
+                         </label>
+                         <input type="file" id="playerProfilePicInput" accept="image/*" style="display:none;" onchange="previewImage(this)">
+                     </div>
+                     <input type="text" id="playerNameInput" placeholder="Your Name">
+                     <input type="text" id="playerUsernameInput" placeholder="Free Fire Username (IGN)">
+                     <input type="number" id="playerUidInput" placeholder="Free Fire UID">
+                     <button onclick="savePlayerUid()" class="btn-full">Save Profile</button>
+                 </div>
+                 <div id="logoutBox" style="display:none; margin-top:10px;">
+                     <img id="displayProfilePic" src="https://placehold.co/100x100" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid #22c55e; margin-bottom:10px; box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);">
+                     <h3 id="displayName" style="color:#fff; margin-bottom:5px;"></h3>
+                     <p style="color:#aaa; font-size:0.9rem;">IGN: <span id="displayUsername" style="color:#22c55e;"></span></p>
+                     <p style="color:#aaa; font-size:0.9rem; margin-bottom:15px;">UID: <span id="displayUid"></span></p>
+                     <button onclick="editProfile()" style="background:none; border:1px solid #22c55e; color:#22c55e; padding:5px 15px; border-radius:20px; cursor:pointer; margin-right:10px;">Edit</button>
+                     <button onclick="logoutPlayer()" style="background:none; border:1px solid #ff4757; color:#ff4757; padding:5px 15px; border-radius:20px; cursor:pointer;">Logout</button>
+                     <button onclick="deleteAccount()" style="display:block; margin:15px auto 0; background:none; border:none; color:#666; font-size:12px; cursor:pointer; text-decoration:underline;">Delete Account Data</button>
+                 </div>
+            </div>
+                     
+
+            <!-- Player Stats -->
+            <div class="card" style="margin-top:15px;">
+                <div style="display:flex; justify-content:space-around; text-align:center;">
+                    <div>
+                        <div id="statMatches" style="font-size:1.5rem; color:#22c55e; font-weight:bold;">0</div>
+                        <div style="color:#aaa; font-size:0.9rem;">Matches</div>
+                    </div>
+                    <div>
+                        <div id="statKills" style="font-size:1.5rem; color:#ef4444; font-weight:bold;">0</div>
+                        <div style="color:#aaa; font-size:0.9rem;">Kills</div>
+                    </div>
+                    <div>
+                        <div id="statWins" style="font-size:2rem; color:#20bf55; font-weight:bold;">0</div>
+                        <div style="color:#aaa; font-size:0.9rem;">Wins</div>
+                    </div>
+                </div>
+                <!-- Rank Progress Bar -->
+                <div id="rankProgressSection" style="margin-top:15px; display:none; background:#1f2933; padding:10px; border-radius:10px;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:8px; font-weight:bold;">
+                        <span id="currentRankLabel">Silver</span>
+                        <span id="nextRankLabel">Gold</span>
+                    </div>
+                    <div style="width:100%; background:#111; height:6px; border-radius:10px; overflow:hidden;">
+                        <div id="rankProgressBar" style="height:100%; width:0%; background:#22c55e; transition:width 0.5s ease;"></div>
+                    </div>
+                    <div id="rankMsgBox" style="text-align:center; font-size:0.8rem; color:#aaa; margin-top:5px;">
+                        <span id="rankNeeded">0</span> wins to next rank
+                    </div>
+                </div>
+            </div>
+
+            <!-- My Matches -->
+            <h3 style="margin-top:20px;">⚔️ My Matches</h3>
+            <div class="card">
+                <div id="myMatchesList" style="max-height:200px; overflow-y:auto; margin-top:15px;">
+                    <div style="text-align:center; color:#888; padding:20px;">Enter your UID above to see your matches.</div>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- REGISTRATION SECTION (Hidden Initially) -->
+        <div id="registrationSection" style="display: none; padding:15px;">
+            <button onclick="navAction('home')" style="background:transparent; border:none; color:#22c55e; cursor:pointer; margin-bottom:10px; font-size:1rem;">⬅ Back</button>
+
+        <!-- Prize Pool Section -->
+        <div class="card" style="text-align:center; border-color: #22c55e;">
+            <h4 id="dynamicPrizePool" style="color:#22c55e; font-size:18px;">💰 Prize Pool: ₹0</h4>
+            <div style="display:flex; justify-content:space-around; margin-top:20px; flex-wrap:wrap; gap:10px;">
+                <div>
+                    <div style="color:#ffd700; font-weight:bold;">1st</div>
+                    <div id="prize1">₹0</div>
+                </div>
+                <div>
+                    <div style="color:#c0c0c0; font-weight:bold;">2nd</div>
+                    <div id="prize2">₹0</div>
+                </div>
+                <div>
+                    <div style="color:#ef4444; font-weight:bold;">Kill</div>
+                    <div id="prizeKill">₹0</div>
+                </div>
+            </div>
+            <p style="margin-top:20px; font-size:0.9rem; color:#888;">*Prizes distributed via UPI within 24hrs of match completion.</p>
+        </div>
+
+        <!-- Registration Form (Moved Up) -->
+        <div class="card">
+            <h4>📝 Squad Registration</h4>
+            <form id="regForm">
+                <input type="hidden" id="selectedMap" value="Bermuda">
+                <input type="hidden" id="selectedTourName" value="">
+                <input type="hidden" id="selectedEntryFee" value="0">
+                <input type="hidden" id="selectedMaxTeams" value="48">
+                <div class="form-group">
+                    <label>Game Mode</label>
+                    <input type="text" id="gameMode" readonly style="background: rgba(255,255,255,0.1); color: #aaa; cursor: not-allowed;">
+                </div>
+                <div class="form-group">
+                    <label>Team Name</label>
+                    <input type="text" id="teamName" placeholder="e.g. Dravexo Warriors" required>
+                </div>
+                <div class="form-group">
+                    <label>Leader Name (IGL)</label>
+                    <input type="text" id="leaderName" placeholder="In-Game Name" required>
+                </div>
+                <div class="form-group">
+                    <label>Leader UID</label>
+                    <input type="number" id="leaderUid" placeholder="123456789" required>
+                </div>
+                <button type="submit" class="btn-full">REGISTER SQUAD</button>
+            </form>
+        </div>
+
+        <!-- Check Status Section -->
+        <div class="card">
+            <h4>⚠️ Check Status</h4>
+            <p style="font-size:0.9rem; color:#aaa; margin-bottom:15px;">Enter your Leader UID to check if your team has been flagged for rule violations.</p>
+            <div style="display:flex; gap:10px;">
+                <input type="number" id="checkUid" placeholder="Enter Leader UID" style="flex:1;">
+                <button onclick="checkPlayerStatus()" class="btn-full" style="width:auto; margin-top:0; background: #555;">Check</button>
+            </div>
+            <div id="statusResult" class="status-result"></div>
+        </div>
+
+        <!-- Leaderboard Section -->
+        <div class="card" id="leaderboardCard">
+            <h4>🏆 Match Leaderboard</h4>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Team Name</th>
+                            <th>Kills</th>
+                            <th>Total Points</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboardList">
+                        <tr><td colspan="4" style="text-align:center; padding:20px; color:#888;">Matches haven't started yet.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Registered Teams -->
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom:10px;">
+                <h4 style="margin-bottom:0; border:none; padding:0;">🏆 Registered Squads</h4>
+                <select id="mapFilter" style="width:auto; padding:8px; font-size:0.9rem; background:rgba(0,0,0,0.3); color:white; border:1px solid rgba(255,255,255,0.2); border-radius:5px; outline:none;">
+                    <option value="All" style="background:#1a1a2e;">All Maps</option>
+                    <option value="Bermuda" style="background:#1a1a2e;">Bermuda</option>
+                    <option value="Bermuda Remastered" style="background:#1a1a2e;">Bermuda Remastered</option>
+                    <option value="Kalahari" style="background:#1a1a2e;">Kalahari</option>
+                    <option value="Purgatory" style="background:#1a1a2e;">Purgatory</option>
+                    <option value="Alpine" style="background:#1a1a2e;">Alpine</option>
+                    <option value="Nexterra" style="background:#1a1a2e;">Nexterra</option>
+                </select>
+            </div>
+            <div class="team-list" id="teamList">
+                <div style="text-align:center; padding:20px; color:#888;">Loading teams...</div>
+            </div>
+        </div>
+        </div> <!-- End Registration Section -->
+
+    <!-- Rules Modal -->
+    <div id="rulesModal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeRules()">&times;</button>
+            <h2>📜 Tournament Rules</h2>
+            <ul>
+                <li><strong>1. Hacking & Cheating:</strong> Use of Aimbot, Wallhack, Scripts, Config files, or any third-party tool is strictly prohibited. <strong>Penalty: Permanent Ban & Disqualification.</strong></li>
+                <li><strong>2. Teaming:</strong> Teaming up with other opponents/squads in the match is not allowed. If caught, both teams will be disqualified immediately.</li>
+                <li><strong>3. Emulators:</strong> Only Mobile players are allowed. Emulator players will be kicked from the room or disqualified if detected later.</li>
+                <li><strong>4. Glitch Abuse:</strong> Using map glitches (hiding inside rocks, under map) is forbidden.</li>
+                <li><strong>5. ID Level:</strong> All players must have an ID Level of 40+ to participate (to prevent hacker accounts).</li>
+                <li><strong>6. Punctuality:</strong> Room ID & Password will be shared on WhatsApp. Teams must join 10 minutes before start time.</li>
+                <li><strong>7. Re-match:</strong> No re-matches will be hosted for personal network issues or disconnects. Only server-side failures count.</li>
+                <li><strong>8. Toxic Behavior:</strong> Abusing admins or other players in the group/lobby will lead to a ban.</li>
+                <li><strong>9. Prize Distribution:</strong> Winnings will be sent to the registered IGL's UPI ID within 24 hours of result verification.</li>
+            </ul>
+            <p style="margin-top:15px; color:#ff4757; font-size:0.9rem;">* Breaking any rule will result in immediate disqualification and forfeiture of any winnings.</p>
+            
+            <button onclick="closeRules()" class="btn-full" style="margin-top:20px;">I Understand</button>
+            <button onclick="window.location.href='contact.html'" class="contact-btn-modal">📞 Contact Admin</button>
+        </div>
+    </div>
+
+    <!-- Alert Modal -->
+    <div id="alertModal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeAlert()">&times;</button>
+            <h2>📢 Match Alert!</h2>
+            <p id="alertMessage" style="font-size: 1.1rem; color: white; margin-top: 15px; line-height: 1.6;"></p>
+            <button onclick="closeAlert()" class="btn-full" style="margin-top:20px; background: #ff4757;">OK</button>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal-overlay">
+        <div class="modal-content" style="border-color: #20bf55; text-align: center;">
+            <h2 style="color: #20bf55;">🎉 Registration Complete!</h2>
+            <p id="successMessage" style="font-size: 1.1rem; color: white; margin-top: 15px; line-height: 1.6;"></p>
+            <button onclick="closeSuccess()" class="btn-full" style="margin-top:20px; background: #20bf55;">AWESOME</button>
+        </div>
+    </div>
+
+    <!-- Team Details Modal -->
+    <div id="teamDetailsModal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeTeamDetails()">&times;</button>
+            <h2 id="detailsTeamName" style="color:#22c55e;">Team Details</h2>
+            <ul style="list-style: none; margin-left: 0; margin-top:20px; line-height:2;">
+                <li><strong><span style="color:#aaa;">IGL:</span></strong> <span id="detailsLeaderName"></span></li>
+                <li><strong><span style="color:#aaa;">UID:</span></strong> <span id="detailsLeaderUid"></span></li>
+                <hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
+                <li><strong><span style="color:#aaa;">Map:</span></strong> <span id="detailsMap"></span></li>
+                <li><strong><span style="color:#aaa;">Mode:</span></strong> <span id="detailsGameMode"></span></li>
+            </ul>
+            <div style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;">
+                <button onclick="shareMatchInfo()" class="btn-full" style="background:#25D366; flex:1; margin-top:0;">📱 Share</button>
+                <button onclick="reportTeam()" class="btn-full" style="background:#ff4757; flex:1; margin-top:0;">⚠️ Report</button>
+                <button onclick="closeTeamDetails()" class="btn-full" style="background:#555; flex:1; margin-top:0;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Withdraw Modal -->
+    <div id="withdrawModal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeWithdrawModal()">&times;</button>
+            <h2>💸 Withdraw Money</h2>
+            <p style="color:#aaa; font-size:0.9rem; margin-bottom:15px;">Minimum withdrawal: ₹50</p>
+            <div class="form-group">
+                <label>Amount (₹)</label>
+                <input type="number" id="withdrawAmount" placeholder="Enter Amount">
+            </div>
+            <div class="form-group">
+                <label>UPI ID (GPay/PhonePe)</label>
+                <input type="text" id="withdrawUpi" placeholder="e.g. 9876543210@upi">
+            </div>
+            <button onclick="submitWithdraw()" class="btn-full" style="margin-top:10px;">Submit Request</button>
+        </div>
+    </div>
+
+    <!-- Add Money Modal -->
+    <div id="addMoneyModal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeAddMoneyModal()">&times;</button>
+            <h2>➕ Add Money</h2>
+            <div style="background:white; padding:10px; border-radius:10px; margin-bottom:15px; text-align:center;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=dravexo8@gmail.com&pn=Dravexo&cu=INR" alt="QR Code" style="width:150px;">
+                <p style="color:#333; font-size:0.8rem; margin-top:5px;">Scan & Pay</p>
+            </div>
+            <div class="form-group">
+                <label>Amount Paid (₹)</label>
+                <input type="number" id="depositAmount" placeholder="Enter Amount">
+            </div>
+            <div class="form-group">
+                <label>UTR / Transaction ID</label>
+                <input type="text" id="depositUtr" placeholder="Enter 12-digit UTR">
+            </div>
+            <button onclick="submitDeposit()" class="btn-full" style="margin-top:10px; background:#01baef;">Verify Deposit</button>
+        </div>
+    </div>
+
+    <audio id="alertSound" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg" preload="auto"></audio>
+
+    <script>
+        function showRegistration(mapName, tourName, mode, fee, maxTeams) {
+            console.log("Opening Registration for:", tourName); // Debugging
+
+            const regSection = document.getElementById('registrationSection');
+            const mainContent = document.getElementById('mainContent');
+
+            if (!regSection || !mainContent) {
+                alert("Error: Registration page not loaded. Please refresh.");
+                return;
+            }
+
+            try {
+                const savedUid = localStorage.getItem('player_uid');
+                if (!savedUid) {
+                    openAlert("⚠️ Profile Incomplete!\nPlease save your Free Fire UID in the Profile tab before joining.", "🚫 UID Required");
+                    navAction('profile');
+                    return;
+                }
+
+                // Show Registration Section FIRST, then hide Main Content
+                regSection.style.display = 'block'; // Changed to block for better compatibility
+                mainContent.style.display = 'none';
+                window.scrollTo(0, 0); // Scroll to top
+                
+                document.getElementById('selectedMap').value = mapName;
+                document.getElementById('selectedTourName').value = tourName || mapName;
+                document.getElementById('gameMode').value = mode || 'Squad';
+                document.getElementById('selectedEntryFee').value = fee || 0;
+                
+                // 🔒 Lock UID Field (Security: Prevent Fake UIDs)
+                const uidInput = document.getElementById('leaderUid');
+                if(uidInput) {
+                    uidInput.value = savedUid;
+                    uidInput.readOnly = true;
+                    uidInput.style.background = "rgba(255,255,255,0.1)";
+                    uidInput.style.color = "#aaa";
+                    uidInput.style.cursor = "not-allowed";
+                }
+                
+                const submitBtn = document.querySelector('#regForm button[type="submit"]');
+                if(submitBtn) submitBtn.innerText = (fee && fee > 0) ? `PAY ₹${fee} & JOIN` : "JOIN MATCH";
+                
+                // Set context for team list to show only this tournament's teams
+                window.currentTournamentView = tourName;
+                if(document.getElementById('mapFilter')) document.getElementById('mapFilter').style.display = 'none';
+                if(window.renderTeams) window.renderTeams();
+
+                if(window.loadLeaderboardForTournament) loadLeaderboardForTournament(tourName || mapName);
+                openRules(); // Show rules immediately as requested
+            } catch (e) {
+                console.error("Registration Error:", e);
+                alert("Error opening registration: " + e.message);
+            }
+        }
+
+        function openLeaderboard(tourName) {
+            const regSection = document.getElementById('registrationSection');
+            const mainContent = document.getElementById('mainContent');
+            
+            if (regSection && mainContent) {
+                regSection.style.display = 'block';
+                mainContent.style.display = 'none';
+                if (window.loadLeaderboardForTournament) window.loadLeaderboardForTournament(tourName);
+                setTimeout(() => {
+                    const lbCard = document.getElementById('leaderboardCard');
+                    if (lbCard) lbCard.scrollIntoView({ behavior: 'smooth' });
+                }, 300);
+            }
+        }
+
+        function openRules() { document.getElementById('rulesModal').style.display = 'flex'; }
+        function closeRules() { document.getElementById('rulesModal').style.display = 'none'; }
+        window.onclick = function(event) {
+            const modal = document.getElementById('rulesModal');
+            const detailsModal = document.getElementById('teamDetailsModal');
+            if (event.target == modal) closeRules();
+            if (event.target == detailsModal) closeTeamDetails();
+            if (event.target == document.getElementById('successModal')) closeSuccess();
+        }
+
+        // Wallet Modals
+        function openWithdrawModal() { document.getElementById('withdrawModal').style.display = 'flex'; }
+        function closeWithdrawModal() { document.getElementById('withdrawModal').style.display = 'none'; }
+        
+        function openAddMoneyModal() { document.getElementById('addMoneyModal').style.display = 'flex'; }
+        function closeAddMoneyModal() { document.getElementById('addMoneyModal').style.display = 'none'; }
+
+        function copyRoomId() {
+            const roomId = document.getElementById('liveRoomId').innerText;
+            if(roomId && roomId !== "Loading..." && roomId !== "Wait...") {
+                navigator.clipboard.writeText(roomId).then(() => {
+                    const btn = document.getElementById('copyIdBtn');
+                    if(btn) {
+                        btn.innerText = "✅ Copied";
+                        setTimeout(() => btn.innerText = "📋 Copy", 2000);
+                    }
+                });
+            }
+        }
+
+        // Close modals on outside click
+        window.onclick = function(event) {
+            const rules = document.getElementById('rulesModal');
+            const details = document.getElementById('teamDetailsModal');
+            const success = document.getElementById('successModal');
+            const withdraw = document.getElementById('withdrawModal');
+            const addMoney = document.getElementById('addMoneyModal');
+            
+            if (event.target == rules) closeRules();
+            if (event.target == details) closeTeamDetails();
+            if (event.target == success) closeSuccess();
+            if (event.target == withdraw) closeWithdrawModal();
+            if (event.target == addMoney) closeAddMoneyModal();
+        }
+
+        function openAlert(message, title) {
+            document.querySelector('#alertModal h2').innerText = title || "📢 Match Alert!";
+            document.getElementById('alertMessage').innerText = message;
+            document.getElementById('alertModal').style.display = 'flex';
+            document.getElementById('alertSound').play().catch(e => {});
+        }
+        function closeAlert() {
+            document.getElementById('alertModal').style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            document.getElementById('successMessage').innerText = message;
+            document.getElementById('successModal').style.display = 'flex';
+            document.getElementById('alertSound').play().catch(e => {});
+        }
+        function closeSuccess() {
+            document.getElementById('successModal').style.display = 'none';
+            navAction('profile'); // Go to My Matches after success
+        }
+
+        function showTeamDetails(team) {
+            document.getElementById('detailsTeamName').innerText = team.teamName;
+            document.getElementById('detailsLeaderName').innerText = team.leaderName;
+            document.getElementById('detailsLeaderUid').innerText = team.leaderUid;
+            document.getElementById('detailsMap').innerText = team.map || 'N/A';
+            document.getElementById('detailsGameMode').innerText = team.gameMode || 'N/A';
+            document.getElementById('teamDetailsModal').style.display = 'flex';
+        }
+        function closeTeamDetails() {
+            document.getElementById('teamDetailsModal').style.display = 'none';
+        }
+
+        function shareMatchInfo() {
+            const teamName = document.getElementById('detailsTeamName').innerText;
+            const map = document.getElementById('detailsMap').innerText;
+            const mode = document.getElementById('detailsGameMode').innerText;
+            
+            const text = `🔥 *Tournament Squad Info* 🔥%0A%0A🛡️ *Team:* ${teamName}%0A🗺️ *Map:* ${map}%0A🎮 *Mode:* ${mode}%0A%0ACheck it out on Dravexo!`;
+            window.open(`https://wa.me/?text=${text}`, '_blank');
+        }
+
+        function reportTeam() {
+            const teamName = document.getElementById('detailsTeamName').innerText;
+            const uid = document.getElementById('detailsLeaderUid').innerText;
+            const text = `⚠️ *Report Team* ⚠️%0A%0ATeam: ${teamName}%0AIGL UID: ${uid}%0A%0AReason: Suspicious activity/Rule violation.`;
+            window.open(`https://wa.me/919876543210?text=${text}`, '_blank');
+        }
+        
+        function reportResult() {
+            window.open("https://wa.me/919876543210?text=Hello Admin, here is the result screenshot for the match.", "_blank");
+        }
+
+        function shareApp() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Dravexo Free Fire Tournament',
+                    text: 'Join Dravexo Free Fire Tournaments! Win prizes daily.',
+                    url: window.location.href
+                }).catch(console.error);
+            } else {
+                navigator.clipboard.writeText(window.location.href);
+                alert('Link copied to clipboard!');
+            }
+        }
+
+        // Preview Image
+        window.previewImage = function(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('previewProfilePic').src = e.target.result;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        };
+
+    // Bottom Navigation Logic
+    function navAction(action, element) {
+        // Update Active State
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        if(element) element.classList.add('active');
+            else {
+                // Auto highlight based on action
+                const el = document.querySelector(`.nav-item[onclick*="'${action}'"]`);
+                if(el) el.classList.add('active');
+            }
+
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById('registrationSection').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+
+            if(action === 'home') {
+                document.getElementById('tab-home').classList.add('active');
+                window.scrollTo({top: 0, behavior: 'smooth'});
+            } else if(action === 'join') {
+                document.getElementById('tab-join').classList.add('active');
+                
+                // Fix: Force reset Map Filter to 'All' when opening tab to show all matches
+                const mapFilterEl = document.getElementById('joinMapFilter');
+                if(mapFilterEl) mapFilterEl.value = 'All';
+
+                if(window.renderTournaments) window.renderTournaments();
+            } else if(action === 'wallet') {
+                document.getElementById('tab-wallet').classList.add('active');
+            } else if(action === 'profile') {
+                document.getElementById('tab-profile').classList.add('active');
+            }
+
+            // Save active tab
+            sessionStorage.setItem('activeTab', action);
+
+            // Clear tournament view context when navigating away
+            window.currentTournamentView = null;
+        }
+
+        // Fallback for Leaderboard Function (Prevents crash if module isn't ready)
+        if (!window.loadLeaderboardForTournament) {
+            window.loadLeaderboardForTournament = function() { console.log("Leaderboard module loading..."); };
+        }
+        
+        // Expose to window
+
+        // Restore Active Tab on Load
+        document.addEventListener('DOMContentLoaded', () => {
+            const activeTab = sessionStorage.getItem('activeTab');
+            const navItem = document.querySelector(`.nav-item[onclick*="'${activeTab}'"]`);
+            if (activeTab && navItem) navAction(activeTab, navItem);
+        });
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, onValue, query, orderByChild, equalTo, get, serverTimestamp, set, runTransaction, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { firebaseConfig } from "./config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const escapeQuotes = (str) => {
+            if (typeof str !== 'string') return '';
+            return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, ' ');
+        };
+
+        // --- CONNECTION MONITORING ---
+        const connectedRef = ref(db, ".info/connected");
+        onValue(connectedRef, (snap) => {
+            const existingAlert = document.getElementById('offline-alert');
+            if (snap.val() === false) {
+                if(!existingAlert) {
+                    const alertDiv = document.createElement('div');
+                    alertDiv.id = 'offline-alert';
+                    alertDiv.style.cssText = 'position:fixed; top:0; left:0; width:100%; background:#ef4444; color:white; text-align:center; padding:5px; font-size:12px; z-index:10000; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.2);';
+                    alertDiv.innerText = '⚠️ No Internet Connection. Reconnecting...';
+                    document.body.appendChild(alertDiv);
+                }
+            } else {
+                if(existingAlert) existingAlert.remove();
+            }
+        });
+
+        // --- AUTH STATE (For Internal ID) ---
+        let internalUser = null;
+        import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        window.loginWithGoogle = () => {
+            signInWithPopup(auth, provider).then((result) => {
+                openAlert("Login Successful!", "✅ Welcome");
+            }).catch((error) => {
+                openAlert(error.message, "❌ Login Failed");
+            });
+        };
+
+        window.logoutGoogle = () => {
+            signOut(auth).then(() => {
+                window.location.reload();
+            });
+        };
+
+        onAuthStateChanged(auth, (user) => { 
+            internalUser = user;
+            
+            // Update UI for Login State
+            const loggedOutView = document.getElementById('loggedOutView');
+            const loggedInView = document.getElementById('loggedInView');
+            const authEmail = document.getElementById('authEmail');
+
+            if (user) {
+                if(loggedOutView) loggedOutView.style.display = 'none';
+                if(loggedInView) loggedInView.style.display = 'block';
+                if(authEmail) authEmail.innerText = user.email;
+            } else {
+                if(loggedOutView) loggedOutView.style.display = 'block';
+                if(loggedInView) loggedInView.style.display = 'none';
+            }
+
+            if(user && user.email === 'dravexo8@gmail.com') {
+                window.isAdmin = true;
+            } else {
+                window.isAdmin = false;
+            }
+            if(window.activeTournaments) window.renderTournaments(); // Re-render to update UI
+
+            // Load Wallet for Authenticated User (Fix for Balance Issue)
+            if (user) {
+                const walletRef = ref(db, `users/${user.uid}/wallet`);
+                
+                // Check & Give Welcome Bonus (First Time)
+                get(walletRef).then((snap) => {
+                    if (!snap.exists()) {
+                        set(walletRef, {
+                            balance: 10,
+                            bonus: 10,
+                            history: {
+                                [Date.now()]: {
+                                    amount: 10,
+                                    desc: "Welcome Bonus 🎁",
+                                    type: "credit",
+                                    status: "success"
+                                }
+                            }
+                        });
+                    }
+                });
+
+                onValue(walletRef, (snapshot) => {
+                    if(snapshot.exists()) {
+                        const w = snapshot.val();
+                        const wb = document.getElementById('walletBalance');
+                        const hwb = document.getElementById('headerWalletBalance');
+                        
+                        if(wb) wb.innerText = `₹${w.balance || 0}`;
+                        if(hwb) hwb.innerText = `₹${w.balance || 0}`;
+
+                        // Calculate Pending Amount
+                        let pendingTotal = 0;
+                        if (w.history) {
+                            Object.values(w.history).forEach(h => {
+                                if(h.status === 'pending' && h.type === 'credit') {
+                                    pendingTotal += parseInt(h.amount || 0);
+                                }
+                            });
+                        }
+                        const pendingEl = document.getElementById('pendingBalanceDisplay');
+                        if(pendingEl) {
+                            pendingEl.style.display = pendingTotal > 0 ? 'block' : 'none';
+                            document.getElementById('pendingAmount').innerText = pendingTotal;
+                        }
+                        
+                        // Render History
+                        const historyList = document.getElementById('walletHistoryList');
+                        if (historyList) {
+                            historyList.innerHTML = '';
+                            if (w.history) {
+                                const history = Object.entries(w.history).sort((a, b) => b[0] - a[0]); // Descending
+                                history.forEach(([ts, item]) => {
+                                    const date = new Date(parseInt(ts)).toLocaleString();
+                                    const color = item.type === 'credit' ? '#20bf55' : '#ff4757';
+                                    const sign = item.type === 'credit' ? '+' : '-';
+                                    const badge = item.status === 'pending' 
+                                        ? '<span style="font-size:0.7rem; background:#f1c40f; color:#000; padding:2px 6px; border-radius:4px; margin-left:5px; vertical-align:middle;">Pending</span>' 
+                                        : '';
+                                    
+                                    historyList.innerHTML += `
+                                        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #1f2933;">
+                                            <div>
+                                                <div style="font-weight:bold; color:#ddd;">${item.desc} ${badge}</div>
+                                                <div style="font-size:0.75rem; color:#888;">${date}</div>
+                                            </div>
+                                            <div style="font-weight:bold; color:${color}; font-size:1.1rem;">${sign}₹${item.amount}</div>
+                                        </div>
+                                    `;
+                                });
+                            } else {
+                                historyList.innerHTML = '<div style="text-align:center; color:#888; padding:20px;">No transactions yet.</div>';
+                            }
+                        }
+                    } else {
+                         const wb = document.getElementById('walletBalance');
+                         const hwb = document.getElementById('headerWalletBalance');
+                         if(wb) wb.innerText = `₹0`;
+                         if(hwb) hwb.innerText = `₹0`;
+                    }
+                });
+            }
+        });
+
+        // --- PLAYER PROFILE LOGIC (Moved to Module) ---
+        
+        // Preview Image
+        window.previewImage = function(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('previewProfilePic').src = e.target.result;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        };
+
+        window.savePlayerUid = async function() {
+            const name = document.getElementById('playerNameInput').value.trim();
+            const username = document.getElementById('playerUsernameInput').value.trim();
+            const uid = document.getElementById('playerUidInput').value.trim();
+            const picInput = document.getElementById('playerProfilePicInput');
+
+            if (!name) return openAlert("Please enter your Name.", "⚠️ Missing Info");
+            if (!username) return openAlert("Please enter your Free Fire Username.", "⚠️ Missing Info");
+
+            // 🛡️ Security: Validate UID Format (8-11 Digits only)
+            if (!/^[0-9]{8,11}$/.test(uid)) {
+                openAlert("⚠️ Invalid UID!\nPlease enter a valid 8 to 11 digit Free Fire UID.", "🚫 Invalid Input");
+                return;
+            }
+
+            // 🛡️ Check Unique Username
+            try {
+                const usernameRef = ref(db, `tournaments/usernames/${username}`);
+                const userSnap = await get(usernameRef);
+                if (userSnap.exists() && userSnap.val() !== uid) {
+                    return openAlert(`The username '${username}' is already taken.\nPlease choose a different one.`, "⚠️ Username Taken");
+                }
+                // Reserve Username
+                await set(usernameRef, uid);
+            } catch (e) {
+                console.warn("Username check skipped (Offline/Permission):", e);
+            }
+
+            // Handle Image Upload
+            let picBase64 = localStorage.getItem('player_pic') || "";
+            if (picInput.files && picInput.files[0]) {
+                try {
+                    picBase64 = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(picInput.files[0]);
+                    });
+                } catch (e) {
+                    console.error("Image upload failed", e);
+                }
+            }
+
+            // Check Block Status
+            try {
+                const blockSnap = await get(ref(db, `tournaments/blocked_users/${uid}`));
+                if (blockSnap.exists()) {
+                    const reason = blockSnap.val().reason;
+                    return openAlert(`🚫 ACCESS DENIED\n\nYour UID (${uid}) has been blocked.\nReason: ${reason}`, "🚫 Account Blocked");
+                }
+            } catch (e) { console.log("Block check skipped"); }
+
+            // Save Locally
+            localStorage.setItem('player_uid', uid);
+            localStorage.setItem('player_name', name);
+            localStorage.setItem('player_username', username);
+            if(picBase64) localStorage.setItem('player_pic', picBase64);
+            window.location.reload();
+        };
+
+        window.editProfile = function() {
+            document.getElementById('loginBox').style.display = 'block';
+            document.getElementById('logoutBox').style.display = 'none';
+            document.getElementById('playerNameInput').value = localStorage.getItem('player_name') || '';
+            document.getElementById('playerUsernameInput').value = localStorage.getItem('player_username') || '';
+            document.getElementById('playerUidInput').value = localStorage.getItem('player_uid') || '';
+            const savedPic = localStorage.getItem('player_pic');
+            if(savedPic) document.getElementById('previewProfilePic').src = savedPic;
+        };
+
+        window.logoutPlayer = function() {
+            localStorage.removeItem('player_uid');
+            localStorage.removeItem('player_name');
+            localStorage.removeItem('player_username');
+            localStorage.removeItem('player_pic');
+            window.location.reload();
+        };
+
+        window.deleteAccount = function() {
+            if(confirm("⚠️ Are you sure you want to delete all local account data?")) {
+                localStorage.removeItem('player_uid');
+                localStorage.removeItem('player_name');
+                localStorage.removeItem('player_username');
+                localStorage.removeItem('player_pic');
+                window.location.reload();
+            }
+        };
+
+        // --- Define Global Function for Leaderboard Loading ---
+        window.loadLeaderboardForTournament = function(tourName) {
+             const tbody = document.getElementById('leaderboardList');
+             if(!tbody) return;
+             tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#888;">Loading...</td></tr>';
+             
+             const lbRef = ref(db, `tournaments/leaderboards/${tourName}`);
+             onValue(lbRef, (snapshot) => {
+                 tbody.innerHTML = '';
+                 if (snapshot.exists()) {
+                     const data = [];
+                     snapshot.forEach(child => data.push(child.val()));
+                     data.sort((a, b) => b.points - a.points);
+                     
+                     data.forEach((team, index) => {
+                        let rankColor = '#fff';
+                        if (index === 0) rankColor = '#ffd700';
+                        else if (index === 1) rankColor = '#c0c0c0';
+                        else if (index === 2) rankColor = '#cd7f32';
+
+                         tbody.innerHTML += `
+                             <tr>
+                                 <td style="color:${rankColor}; font-weight:bold;">#${index + 1}</td>
+                                 <td>${team.teamName}</td>
+                                 <td>${team.kills}</td>
+                                 <td style="font-weight:bold; color:#22c55e;">${team.points}</td>
+                             </tr>
+                         `;
+                     });
+                 } else {
+                     tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#888;">Matches haven\'t started yet.</td></tr>';
+                 }
+             });
+        };
+
+        // --- ANALYTICS TRACKING (Connect to Dashboard) ---
+        async function trackVisit() {
+            try {
+                // Get Location from free IP API
+                const res = await fetch('https://ipwho.is/');
+                const data = await res.json();
+
+                // Detect Device Type
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                const deviceType = isMobile ? 'Mobile' : 'Desktop';
+                
+                push(ref(db, 'analytics/visits'), {
+                    country: data.country || 'Unknown',
+                    city: data.city || 'Unknown',
+                    lat: data.latitude || 0,
+                    lon: data.longitude || 0,
+                    device: deviceType,
+                    ip: data.ip,
+                    timestamp: serverTimestamp(),
+                    page: 'Tournament Page'
+                });
+            } catch (e) { console.warn("Tracking skipped (Offline):", e.message); }
+        }
+        trackVisit(); // Run on load
+
+        // Load Player Data if UID exists
+        const savedUid = localStorage.getItem('player_uid');
+        const savedName = localStorage.getItem('player_name');
+        const savedUsername = localStorage.getItem('player_username');
+        const savedPic = localStorage.getItem('player_pic');
+        
+        if (savedUid) {
+            document.getElementById('loginBox').style.display = 'none';
+            document.getElementById('logoutBox').style.display = 'block';
+            document.getElementById('displayUid').innerText = savedUid;
+            if(savedName) document.getElementById('displayName').innerText = savedName;
+            if(savedUsername) document.getElementById('displayUsername').innerText = savedUsername;
+            if(savedPic) document.getElementById('displayProfilePic').src = savedPic;
+            document.getElementById('checkUid').value = savedUid; // Auto-fill status check
+
+            // 0. Check Block Status (Security Check)
+            get(ref(db, `tournaments/blocked_users/${savedUid}`)).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const reason = snapshot.val().reason;
+                openAlert(`🚫 YOU ARE BLOCKED\n\nReason: ${reason}\n\nPlease contact support.`, "🚫 Access Denied");
+                    logoutPlayer();
+                }
+            }).catch((error) => {
+                console.log("Block check skipped (Permission Denied - Database Rules):", error.message);
+            });
+
+            // 1. Load Stats
+            const statsRef = ref(db, `tournaments/player_stats/${savedUid}`);
+            onValue(statsRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    const wins = parseInt(data.wins) || 0;
+                    if(document.getElementById('statMatches')) document.getElementById('statMatches').innerText = data.matches || 0;
+                    if(document.getElementById('statKills')) document.getElementById('statKills').innerText = data.kills || 0;
+                    if(document.getElementById('statWins')) document.getElementById('statWins').innerText = wins;
+
+                    // Calculate Rank Badge
+                    let rank = "🥈 Silver";
+                    let color = "#c0c0c0";
+                    let nextRank = "🥇 Gold";
+                    let nextColor = "#ffd700";
+                    let threshold = 5;
+                    let prevThreshold = 0;
+                    
+                    if (wins >= 50) { 
+                        rank = "🏆 Grandmaster"; color = "#ff4757"; 
+                        nextRank = "Max"; nextColor = "#ff4757"; threshold = 50; prevThreshold = 50;
+                    }
+                    else if (wins >= 30) { 
+                        rank = "💎 Heroic"; color = "#b300ff"; 
+                        nextRank = "🏆 Grandmaster"; nextColor = "#ff4757"; threshold = 50; prevThreshold = 30;
+                    }
+                    else if (wins >= 15) { 
+                        rank = "💠 Diamond"; color = "#00d2ff"; 
+                        nextRank = "💎 Heroic"; nextColor = "#b300ff"; threshold = 30; prevThreshold = 15;
+                    }
+                    else if (wins >= 5) { 
+                        rank = "🥇 Gold"; color = "#ffd700"; 
+                        nextRank = "💠 Diamond"; nextColor = "#00d2ff"; threshold = 15; prevThreshold = 5;
+                    }
+
+                    const welcomeEl = document.getElementById('welcomeMsg');
+                    let badge = document.getElementById('rankBadge');
+                    if (!badge) {
+                        if(welcomeEl) welcomeEl.innerHTML += ` <span id="rankBadge" style="font-size:0.7rem; padding:3px 8px; border-radius:12px; vertical-align:middle; border:1px solid ${color}; color:${color}; background:rgba(255,255,255,0.05); margin-left:8px;">${rank}</span>`;
+                    } else {
+                        badge.innerText = rank;
+                        badge.style.color = color;
+                        badge.style.borderColor = color;
+                    }
+
+                    // Update Progress Bar
+                    const progressSection = document.getElementById('rankProgressSection');
+                    if(progressSection) {
+                        progressSection.style.display = 'block';
+                        const currentLabel = document.getElementById('currentRankLabel');
+                        const nextLabel = document.getElementById('nextRankLabel');
+                        const progressBar = document.getElementById('rankProgressBar');
+                        const msgBox = document.getElementById('rankMsgBox');
+
+                        if(currentLabel) { currentLabel.innerText = rank; currentLabel.style.color = color; }
+                        
+                        if (wins >= 50) {
+                            if(nextLabel) { nextLabel.innerText = "Max Rank"; nextLabel.style.color = color; }
+                            if(progressBar) { progressBar.style.width = "100%"; progressBar.style.background = color; }
+                            if(msgBox) msgBox.innerText = "Maximum Rank Achieved!";
+                        } else {
+                            if(nextLabel) { nextLabel.innerText = nextRank; nextLabel.style.color = nextColor; }
+                            
+                            const needed = threshold - wins;
+                            const totalRange = threshold - prevThreshold;
+                            const currentProgress = wins - prevThreshold;
+                            const percent = (currentProgress / totalRange) * 100;
+                            
+                            if(progressBar) {
+                                progressBar.style.width = `${Math.max(5, percent)}%`;
+                                progressBar.style.background = `linear-gradient(90deg, ${color}, ${nextColor})`;
+                            }
+                            if(msgBox) msgBox.innerHTML = `<span id="rankNeeded" style="color:#fff; font-weight:bold;">${needed}</span> wins to next rank`;
+                        }
+                    }
+                }
+            });
+
+            // 2. Load My Matches
+            const matchesRef = query(ref(db, 'tournaments/freefire_registrations'), orderByChild('leaderUid'), equalTo(savedUid));
+            onValue(matchesRef, (snapshot) => {
+                const list = document.getElementById('myMatchesList');
+                window.registeredTournaments = new Set(); // Store registered tournaments
+                list.innerHTML = '';
+                if (snapshot.exists()) {
+                    snapshot.forEach(child => {
+                        const match = child.val();
+                        window.registeredTournaments.add(match.tournamentName); // Add to set
+                        const date = match.timestamp ? new Date(match.timestamp).toLocaleDateString() : 'Recent';
+                        const resId = `res-${child.key}`;
+                        list.innerHTML += `
+                            <div class="card" style="border-left: 3px solid #22c55e; padding:10px;">
+                                <div>
+                                    <div style="font-weight:bold; color:white;">${match.teamName}</div>
+                                    <div style="font-size:0.8rem; color:#888;">${date} • ${match.gameMode || 'Squad'}</div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div style="color:#22c55e; font-size:0.9rem;">Registered</div>
+                                    <div id="${resId}" onclick="openLeaderboard('${escapeQuotes(match.tournamentName)}')" style="display:none; color:#01baef; font-size:0.8rem; font-weight:bold; margin-top:5px; cursor:pointer; text-decoration:underline;">AI Search Result 🤖</div>
+                                </div>
+                            </div>`;
+                        
+                        get(ref(db, `tournaments/leaderboards/${match.tournamentName}`)).then(snap => {
+                            if(snap.exists()) {
+                                const el = document.getElementById(resId);
+                                if(el) el.style.display = 'block';
+                            }
+                        });
+                    });
+                } else {
+                    list.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">You haven\'t joined any tournaments yet.</div>';
+                }
+                if(window.currentFilter === 'MyMatches') renderTournaments();
+            });
+        }
+
+        // --- WALLET ACTIONS ---
+        window.submitWithdraw = async () => {
+            const amountVal = document.getElementById('withdrawAmount').value;
+            const upi = document.getElementById('withdrawUpi').value.trim();
+            
+            if (!internalUser) {
+                openAlert("Please login to withdraw money.", "🔒 Login Required");
+                return;
+            }
+            const uid = internalUser.uid;
+            
+            if(!amountVal || !upi) return openAlert("Please fill all fields", "⚠️ Missing Info");
+            
+            const amount = parseInt(amountVal);
+            if(isNaN(amount) || amount <= 0) return openAlert("Invalid amount. Please enter a positive number.", "⚠️ Invalid Amount");
+            if(!upi.includes('@') || !upi.includes('.')) return openAlert("Invalid UPI ID format. Example: name@bank", "⚠️ Invalid UPI");
+            if(amount < 50) return openAlert("Minimum withdrawal is ₹50", "⚠️ Minimum Limit");
+
+            // Check Bonus Lock
+            const walletSnap = await get(ref(db, `users/${uid}/wallet`));
+            const wData = walletSnap.val() || {};
+            const withdrawable = (parseInt(wData.balance)||0) - (parseInt(wData.bonus)||0);
+            if (amount > withdrawable) {
+                return openAlert(`⚠️ You cannot withdraw bonus amount!\n\nWithdrawable Balance: ₹${withdrawable}\n(Bonus is locked for gameplay only)`, "🚫 Bonus Locked");
+            }
+
+            const btn = document.querySelector('#withdrawModal .btn-full');
+            const originalText = btn.innerText;
+            btn.innerText = "Processing...";
+            btn.disabled = true;
+
+            try {
+                // Fetch Fee Percentage
+                let feePercent = 0;
+                try {
+                    const snap = await get(ref(db, 'system/payment_settings/withdrawalFee'));
+                    if(snap.exists()) feePercent = parseInt(snap.val()) || 0;
+                } catch(e) { console.log("Fee fetch error", e); }
+
+                const feeAmount = Math.floor(amount * (feePercent / 100));
+                const payableAmount = amount - feeAmount;
+
+                if(!confirm(`Withdrawal Request: ₹${amount}\nPlatform Fee (${feePercent}%): -₹${feeAmount}\n\nYou will receive: ₹${payableAmount}\n\nProceed?`)) {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                    return;
+                }
+                
+                const walletRef = ref(db, `users/${uid}/wallet`);
+                
+                const result = await runTransaction(walletRef, (currentData) => {
+                    if (currentData === null) return;
+                    const bal = parseInt(currentData.balance || 0);
+                    if (bal < amount) return; // Abort if insufficient
+                    
+                    currentData.balance = bal - amount;
+                    if (!currentData.history) currentData.history = {};
+                    currentData.history[Date.now()] = {
+                        amount: amount, // Deduct full amount
+                        desc: 'Withdrawal Request',
+                        type: 'debit',
+                        status: 'pending',
+                        upi: upi
+                    };
+                    return currentData;
+                });
+
+                if (result.committed) {
+                    await push(ref(db, 'withdrawals'), {
+                        uid: uid,
+                        amountRequested: amount,
+                        fee: feeAmount,
+                        amount: payableAmount, // Admin sees amount to pay
+                        upi: upi,
+                        status: 'pending',
+                        timestamp: serverTimestamp()
+                    });
+                    openAlert("✅ Withdrawal request submitted!\nAmount deducted from wallet.", "Success");
+                    closeWithdrawModal();
+                    document.getElementById('withdrawAmount').value = '';
+                    document.getElementById('withdrawUpi').value = '';
+                } else {
+                    openAlert("Insufficient balance or transaction failed.", "❌ Transaction Failed");
+                }
+            } catch (error) {
+                console.error(error);
+                openAlert("Error: " + error.message, "❌ Error");
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        };
+
+        window.openAddMoneyModal = async () => {
+            document.getElementById('addMoneyModal').style.display = 'flex';
+            
+            // Fetch Admin QR/UPI
+            const qrImg = document.querySelector('#addMoneyModal img');
+            const qrContainer = qrImg.parentElement;
+            
+            // Reset UI
+            qrImg.style.display = 'inline-block';
+            const existingBtn = document.getElementById('qrRetryBtn');
+            if(existingBtn) existingBtn.style.display = 'none';
+
+            qrImg.onerror = () => {
+                qrImg.style.display = 'none';
+                let btn = document.getElementById('qrRetryBtn');
+                if(!btn) {
+                    btn = document.createElement('button');
+                    btn.id = 'qrRetryBtn';
+                    btn.innerText = '🔄 Retry QR';
+                    btn.style.cssText = 'background:#ff4757; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; margin-bottom:10px; font-size:12px; display:block; margin:0 auto 10px auto;';
+                    btn.onclick = () => {
+                        btn.innerText = 'Loading...';
+                        const src = qrImg.src;
+                        qrImg.src = ''; 
+                        setTimeout(() => { qrImg.src = src; }, 100);
+                        qrImg.style.display = 'inline-block';
+                        btn.style.display = 'none';
+                    };
+                    qrContainer.insertBefore(btn, qrImg);
+                } else {
+                    btn.style.display = 'block';
+                    btn.innerText = '🔄 Retry QR';
+                }
+            };
+
+            try {
+                const snap = await get(ref(db, 'system/payment_settings'));
+                
+                if(snap.exists()) {
+                    const settings = snap.val();
+                    if(settings.qrCode) {
+                        qrImg.src = settings.qrCode;
+                    } else if (settings.upiId) {
+                        const upiLink = `upi://pay?pa=${settings.upiId}&pn=DravexoTournament&cu=INR`;
+                        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiLink)}`;
+                    }
+                }
+            } catch (error) {
+                console.log("Payment settings access denied (Check Database Rules). Using default QR.");
+            }
+        };
+
+        window.submitDeposit = async () => {
+            const amount = parseInt(document.getElementById('depositAmount').value);
+            const utr = document.getElementById('depositUtr').value.trim();
+            
+            if (!internalUser) {
+                openAlert("Please login to deposit money.", "🔒 Login Required");
+                return;
+            }
+            const uid = internalUser.uid;
+
+            // 🛡️ Security: Check Local Block for UTR Spam
+            let strikes = parseInt(localStorage.getItem('utr_strikes') || '0');
+            if (strikes >= 3) {
+                openAlert("🚫 ACTION BLOCKED\n\nYou have been blocked from depositing due to multiple invalid UTR attempts.\nPlease contact support.", "🚫 Action Blocked");
+                return;
+            }
+
+            if(!amount || isNaN(amount) || amount <= 0) return openAlert("Please enter a valid positive Amount.", "⚠️ Invalid Amount");
+            if(!utr || utr.length !== 12 || !/^\d+$/.test(utr)) return openAlert("Invalid UTR! Please enter a valid 12-digit numeric Transaction ID.", "⚠️ Invalid UTR");
+
+            const btn = document.querySelector('#addMoneyModal .btn-full');
+            const originalText = btn.innerText;
+            btn.innerText = "Verifying...";
+            btn.disabled = true;
+
+            try {
+                // Check if UTR is pre-verified by Admin
+                const utrRef = ref(db, `system/verified_utrs/${utr}`);
+                const snapshot = await get(utrRef);
+
+                if (snapshot.exists()) {
+                    const verifiedAmount = snapshot.val();
+                    if (verifiedAmount === amount) {
+                        // Auto-Approve
+                        const walletRef = ref(db, `users/${uid}/wallet`);
+                        await runTransaction(walletRef, (currentData) => {
+                            if (currentData === null) return { balance: amount, history: { [Date.now()]: { amount: amount, desc: 'Deposit (Auto)', type: 'credit' } } };
+                            currentData.balance = (currentData.balance || 0) + amount;
+                            if (!currentData.history) currentData.history = {};
+                            currentData.history[Date.now()] = { amount: amount, desc: 'Deposit (Auto-Verified)', type: 'credit', status: 'success' };
+                            return currentData;
+                        });
+
+                        await push(ref(db, 'deposits'), { uid: uid, amount: amount, utr: utr, status: 'approved', method: 'auto-verified', timestamp: serverTimestamp() });
+                        await remove(utrRef); // Remove used UTR
+
+                        localStorage.setItem('utr_strikes', '0'); // Reset strikes on success
+                        alert("✅ Deposit Successful! Amount added to wallet.");
+                        closeAddMoneyModal();
+                        document.getElementById('depositAmount').value = '';
+                        document.getElementById('depositUtr').value = '';
+                    } else {
+                        openAlert(`⚠️ UTR found but amount mismatch. Expected: ₹${verifiedAmount}.`, "⚠️ Amount Mismatch");
+                    }
+                } else {
+                    // Manual Approval Flow (If UTR not pre-verified)
+                    const historyId = Date.now(); // Unique ID for syncing
+                    await push(ref(db, 'deposits'), { 
+                        uid: uid, 
+                        amount: amount, 
+                        utr: utr, 
+                        status: 'pending', 
+                        method: 'manual',
+                        timestamp: serverTimestamp(),
+                        historyId: historyId
+                    });
+                    
+                    // Add to User History as Pending
+                    try {
+                        const walletRef = ref(db, `users/${uid}/wallet`);
+                        await runTransaction(walletRef, (currentData) => {
+                            if (currentData === null) return { balance: 0, history: { [historyId]: { amount: amount, desc: 'Deposit Request', type: 'credit', status: 'pending' } } };
+                            if (!currentData.history) currentData.history = {};
+                            currentData.history[historyId] = { amount: amount, desc: 'Deposit Request', type: 'credit', status: 'pending' };
+                            return currentData;
+                        });
+                    } catch (e) {
+                        console.warn("Local history update skipped, but admin request sent.");
+                    }
+
+                    openAlert("✅ Request Sent!\n\nAdmin will verify your UTR and approve the amount shortly.", "⏳ Verification Pending");
+                    closeAddMoneyModal();
+                    document.getElementById('depositAmount').value = '';
+                    document.getElementById('depositUtr').value = '';
+                }
+            } catch (error) {
+                console.error(error);
+                openAlert("Error processing deposit: " + error.message, "❌ Error");
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        };
+
+        // --- NOTIFICATION LISTENER ---
+        const alertRef = ref(db, 'tournaments/notifications/match_alert');
+        const lastAlertTime = sessionStorage.getItem('lastAlertTime') || 0;
+
+        onValue(alertRef, (snapshot) => {
+            if (snapshot.exists()) {
+                const alertData = snapshot.val();
+                // Show alert only if it's new (posted after the last one we saw)
+                if (alertData.timestamp > lastAlertTime) {
+                    openAlert(alertData.message);
+                    sessionStorage.setItem('lastAlertTime', alertData.timestamp);
+                }
+            }
+        });
+
+        // Mock function for External API Verification
+        async function verifyExternalUid(uid) {
+            // TODO: Replace with actual Free Fire API endpoint if available
+            // Example: const response = await fetch(`https://api.freefire.com/users/${uid}`);
+            // return response.ok;
+            
+            // Simulating API delay
+            await new Promise(resolve => setTimeout(resolve, 500));
+            return true; // Assume valid for now
+        }
+
+        // Handle Registration
+        document.getElementById('regForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // 🛡️ Security: Validate Inputs before sending to Firebase
+            const lUid = document.getElementById('leaderUid').value.trim();
+            const tName = document.getElementById('teamName').value.trim();
+            const lName = document.getElementById('leaderName').value.trim();
+
+            // 🔒 Security Check: Verify UID matches Profile
+            const savedUid = localStorage.getItem('player_uid');
+            if (lUid !== savedUid) {
+                openAlert("⚠️ Security Alert!\nUID mismatch detected. You cannot change UID during registration.", "🚫 Fake Entry Blocked");
+                return;
+            }
+
+            if (!internalUser) {
+                openAlert("Please login to join tournaments.", "🔒 Login Required");
+                return;
+            }
+
+            if (!/^[0-9]{8,11}$/.test(lUid)) {
+                openAlert("⚠️ Invalid UID!\nPlease enter a valid 8 to 11 digit numeric UID.", "🚫 Invalid UID");
+                return;
+            }
+            if (tName.length < 3 || lName.length < 3) {
+                openAlert("⚠️ Name too short! Team and Leader names must be at least 3 characters.", "⚠️ Invalid Name");
+                return;
+            }
+            if (['admin', 'system', 'dravexo', 'gm', 'moderator'].some(w => tName.toLowerCase().includes(w) || lName.toLowerCase().includes(w))) {
+                openAlert("⚠️ Restricted name used. Please choose a real player name.", "🚫 Restricted Name");
+                return;
+            }
+
+            const btn = e.target.querySelector('.btn-full'); // Fix: Select button inside form only
+            const originalBtnText = btn.innerText;
+            btn.innerText = "Verifying...";
+            btn.disabled = true;
+
+            try {
+                const fee = parseInt(document.getElementById('selectedEntryFee').value) || 0;
+                // 1. Verify UID (External API Simulation)
+                // const isValid = await verifyExternalUid(lUid);
+                // if(!isValid) throw new Error("UID verification failed. Player not found.");
+
+                // 2. Check for Duplicate Registration in this Tournament
+                const tourName = document.getElementById('selectedTourName').value;
+                
+                // 🛡️ Check Duplicate Team Name (Prevent Impersonation)
+                const qName = query(ref(db, 'tournaments/freefire_registrations'), orderByChild('teamName'), equalTo(tName));
+                const nameSnapshot = await get(qName);
+                if (nameSnapshot.exists()) {
+                    let nameTaken = false;
+                    nameSnapshot.forEach(child => {
+                        if (child.val().tournamentName === tourName) nameTaken = true;
+                    });
+                    if (nameTaken) throw new Error(`⚠️ Team Name '${tName}' is already taken in this match!`);
+                }
+
+                const q = query(ref(db, 'tournaments/freefire_registrations'), orderByChild('leaderUid'), equalTo(lUid));
+                const snapshot = await get(q);
+                
+                if (snapshot.exists()) {
+                    let isDuplicate = false;
+                    snapshot.forEach(child => {
+                        if (child.val().tournamentName === tourName) isDuplicate = true;
+                    });
+                    if (isDuplicate) throw new Error(`⚠️ UID ${lUid} is already registered for ${tourName}!`);
+                }
+
+                // 3. Wallet Deduction & Registration (Atomic Transaction)
+                btn.innerText = "Processing...";
+                const walletRef = ref(db, `users/${internalUser.uid}/wallet`);
+                
+                await runTransaction(walletRef, (currentData) => {
+                    if (currentData === null) return { balance: 0, history: {} }; // Init if empty
+                    
+                    const balance = currentData.balance || 0;
+                    if (balance < fee) throw new Error("INSUFFICIENT_BALANCE");
+                    
+                    // Deduct Fee
+                    currentData.balance = balance - fee;
+                    
+                    // Deduct from Bonus (Use bonus first)
+                    if (currentData.bonus && currentData.bonus > 0) {
+                        currentData.bonus = Math.max(0, currentData.bonus - fee);
+                    }
+
+                    if (!currentData.history) currentData.history = {};
+                    currentData.history[Date.now()] = {
+                        amount: fee,
+                        desc: `Joined ${tourName}`,
+                        type: 'debit',
+                        timestamp: serverTimestamp()
+                    };
+                    return currentData;
+                });
+
+                // 4. Save Registration
+                await push(ref(db, 'tournaments/freefire_registrations'), {
+                    map: document.getElementById('selectedMap').value,
+                    tournamentName: tourName,
+                    gameMode: document.getElementById('gameMode').value,
+                    teamName: tName,
+                    leaderName: lName,
+                    leaderUid: lUid, // Free Fire UID
+                    userId: internalUser.uid, // App Internal ID
+                    entryFee: fee,
+                    timestamp: serverTimestamp()
+                });
+
+                showSuccess("Registration Successful! Good luck, Survivor. 🎮");
+                document.getElementById('regForm').reset();
+
+            } catch (error) {
+                if (error.message.includes("INSUFFICIENT_BALANCE")) openAlert("Insufficient Wallet Balance! Please add money.", "❌ Payment Failed");
+                else openAlert(error.message, "❌ Registration Failed");
+            } finally {
+                btn.innerText = originalBtnText;
+                btn.disabled = false;
+            }
+        });
+
+        // Load Teams
+        let allTeams = [];
+        const teamsRef = ref(db, 'tournaments/freefire_registrations');
+        
+        function renderTeams() {
+            const list = document.getElementById('teamList');
+            list.innerHTML = '';
+
+            // Filter teams strictly by the current tournament name
+            let filteredTeams = [];
+            if (window.currentTournamentView) {
+                filteredTeams = allTeams.filter(t => t.tournamentName === window.currentTournamentView);
+            }
+
+            if (filteredTeams.length > 0) {
+                filteredTeams.forEach((t) => {
+                    const teamDiv = document.createElement('div');
+                    teamDiv.className = 'card';
+                    teamDiv.style.padding = '10px';
+                    teamDiv.style.cursor = 'pointer';
+                    teamDiv.innerHTML = `
+                        <span style="font-weight:bold; color:#22c55e;">${t.teamName} <span style="font-size:0.7rem; background:#333; padding:2px 5px; border-radius:4px; margin-left:5px; color:#fff;">${t.tournamentName || t.map}</span></span> 
+                        <span style="float:right; font-size:12px; color:#888;">Details ></span>
+                    `;
+                    teamDiv.addEventListener('click', () => showTeamDetails(t));
+                    list.appendChild(teamDiv);
+                });
+            } else {
+                list.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">No teams registered for this match yet.</div>';
+            }
+        }
+        
+        window.renderTeams = renderTeams;
+
+        onValue(teamsRef, (snapshot) => {
+            if (snapshot.exists()) {
+                allTeams = Object.values(snapshot.val()).reverse(); // Newest first
+                renderTeams();
+            if(window.renderTournaments) window.renderTournaments(); // Update buttons if full
+            } else {
+                allTeams = [];
+                renderTeams();
+            }
+        });
+        
+        // Check Status Function (Exposed to window)
+        window.checkPlayerStatus = async () => {
+            const uid = document.getElementById('checkUid').value;
+            const resultDiv = document.getElementById('statusResult');
+            
+            if(!uid) { openAlert("Please enter a UID", "⚠️ Input Required"); return; }
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = "Checking...";
+            resultDiv.className = "status-result"; // Reset class
+
+            // Check in registrations for disqualification flag
+            const q = query(ref(db, 'tournaments/freefire_registrations'), orderByChild('leaderUid'), equalTo(uid));
+            
+            try {
+                const snapshot = await get(q);
+                if (snapshot.exists()) {
+                    const data = Object.values(snapshot.val())[0];
+                    if (data.status === 'disqualified') {
+                        resultDiv.innerHTML = `<strong>🚫 DISQUALIFIED</strong><br>Reason: ${data.dqReason || 'Violation of Tournament Rules'}<br><span style="font-size:0.8rem;">You will not receive any prizes.</span>`;
+                        resultDiv.classList.add('status-dq');
+                    } else {
+                        resultDiv.innerHTML = `<strong>✅ Active</strong><br>Your squad is registered and in good standing.`;
+                        resultDiv.classList.add('status-ok');
+                    }
+                } else {
+                    resultDiv.innerHTML = "UID not found in registration list.";
+                    resultDiv.style.color = "#ccc";
+                }
+            } catch (e) {
+                console.error(e);
+                if (e.message.includes("permission_denied")) {
+                    resultDiv.innerHTML = "⚠️ Access Denied: Database permissions prevent checking status directly.";
+                } else {
+                    resultDiv.innerHTML = "Error checking status: " + e.message;
+                }
+            }
+        };
+
+        // Load Leaderboard
+        const leaderboardRef = ref(db, 'tournaments/freefire_leaderboard');
+        onValue(leaderboardRef, (snapshot) => {
+            const tbody = document.getElementById('leaderboardList');
+            tbody.innerHTML = '';
+            if (snapshot.exists()) {
+                const data = [];
+                snapshot.forEach(childSnapshot => {
+                    data.push(childSnapshot.val());
+                });
+                
+                // Sort by Points (Descending)
+                data.sort((a, b) => b.points - a.points);
+
+                data.forEach((team, index) => {
+                    let rankColor = '#fff';
+                    if (index === 0) rankColor = '#ffd700'; // Gold
+                    else if (index === 1) rankColor = '#c0c0c0'; // Silver
+                    else if (index === 2) rankColor = '#cd7f32'; // Bronze
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td style="color:${rankColor}; font-weight:bold;">#${index + 1}</td>
+                            <td>${team.teamName}</td>
+                            <td>${team.kills}</td>
+                            <td style="font-weight:bold; color:var(--primary);">${team.points}</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#888;">Matches haven\'t started yet.</td></tr>';
+            }
+        });
+
+        // --- LOAD UPCOMING TOURNAMENTS ---
+        let nextTournament = null;
+        const upcomingRef = ref(db, 'tournaments/upcoming');
+        let sliderInterval;
+        window.currentFilter = 'All';
+
+        // Filter Function
+        window.filterTournaments = (el, category) => {
+            document.querySelectorAll('.filter div').forEach(d => d.classList.remove('active'));
+            el.classList.add('active');
+            window.currentFilter = category;
+            window.renderTournaments();
+        };
+
+        // Delete Function (Admin Only)
+        window.deleteTournament = (key) => {
+            if (!window.isAdmin) return alert("Access Denied: Only Admin can delete!");
+            remove(ref(db, `tournaments/upcoming/${key}`));
+        };
+
+        // Render Function
+        window.renderTournaments = () => {
+            const homeContainer = document.getElementById('homeTournamentDisplay');
+            const joinContainer = document.getElementById('joinTournamentList');
+
+            let tournaments = window.activeTournaments || [];
+            console.log("Rendering Tournaments:", tournaments.length); // Debugging
+
+            // Map Images Mapping
+            const mapImages = {
+                'Bermuda': 'https://placehold.co/600x340/20bf55/FFF?text=BERMUDA',
+                'Bermuda Remastered': 'https://placehold.co/600x340/01baef/FFF?text=REMASTERED',
+                'Kalahari': 'https://placehold.co/600x340/e67e22/FFF?text=KALAHARI',
+                'Purgatory': 'https://placehold.co/600x340/8e44ad/FFF?text=PURGATORY',
+                'Alpine': 'https://placehold.co/600x340/34495e/FFF?text=ALPINE',
+                'Nexterra': 'https://placehold.co/600x340/c0392b/FFF?text=NEXTERRA'
+            };
+
+            const renderCard = (t) => {
+                let date = "Coming Soon";
+                try {
+                    if(t.time) date = new Date(t.time).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+                } catch(e) { console.error("Date Error", e); }
+
+                const total = parseInt(t.prize1||0) + parseInt(t.prize2||0) + parseInt(t.prize3||0);
+                const imgSrc = t.banner || mapImages[t.map] || 'https://placehold.co/600x340/333/FFF?text=No+Image';
+                const entryFee = t.entryFee || 0;
+                const maxTeams = t.maxTeams || 48;
+                
+                const currentCount = allTeams ? allTeams.filter(team => team.tournamentName === t.name).length : 0;
+                const isFull = currentCount >= maxTeams;
+                
+                // Admin Delete Button
+                let deleteBtn = '';
+                if (window.isAdmin) {
+                    deleteBtn = `<button onclick="deleteTournament('${t.key}')" style="position:absolute; top:10px; right:10px; background:red; color:white; border:none; border-radius:5px; padding:5px 10px; cursor:pointer; z-index:10;">🗑️</button>`;
+                }
+
+                let joinButton = `<button class="join" style="margin-top:0;" onclick="showRegistration('${escapeQuotes(t.map)}', '${escapeQuotes(t.name)}', '${t.mode || 'Squad'}', ${entryFee}, ${maxTeams})">Join Now</button>`;
+                let slotsDisplay = `<span style="font-size:0.8rem; color:#aaa; float:right;">${currentCount}/${maxTeams} Slots</span>`;
+                
+                if (isFull) {
+                    joinButton = `<button class="join" style="background:#555; cursor:not-allowed; color:#aaa; margin-top:0;" onclick="openAlert('⚠️ This match is already full!', 'Match Full')">FULL ⛔</button>`;
+                    slotsDisplay = `<span style="font-size:0.8rem; color:#ff4757; float:right; font-weight:bold;">FULL (${maxTeams}/${maxTeams})</span>`;
+                }
+
+                const isFinished = t.time && new Date(t.time).getTime() < Date.now();
+                let aiResultLabel = '';
+                if (isFinished) {
+                     aiResultLabel = `<div onclick="openLeaderboard('${escapeQuotes(t.name)}')" style="color:#01baef; font-size:0.8rem; font-weight:bold; margin-top:5px; text-align:center; cursor:pointer; text-decoration:underline;">AI Search Result 🤖</div>`;
+                }
+
+                return `
+                <div class="card" style="position:relative;">
+                    ${deleteBtn}
+                    <img src="${imgSrc}" style="width:100%; aspect-ratio: 16 / 9; object-fit:cover; border-radius:10px; margin-bottom:10px;">
+                    <div class="card-top"><span>${t.map} • ${t.mode || 'Squad'}</span><span>${date}</span></div>
+                    <h4>${t.name || 'Tournament'} - Prize ₹${total} ${slotsDisplay}</h4>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                        <span style="color:#ffd700; font-weight:bold;">Entry: ₹${entryFee}</span>
+                        ${joinButton}
+                    </div>
+                    ${aiResultLabel}
+                </div>`;
+            };
+
+            // 1. Render Join Tab (ALWAYS SHOW ALL)
+            if(joinContainer) {
+                joinContainer.innerHTML = '';
+
+                // Reset filter visually if needed, but logic below handles 'All'
+                // const mapFilterEl = document.getElementById('joinMapFilter');
+                // if(mapFilterEl && !mapFilterEl.value) mapFilterEl.value = 'All';
+                
+                // Filter by Map (if selected)
+                const mapFilterEl = document.getElementById('joinMapFilter');
+                const mapFilter = mapFilterEl ? mapFilterEl.value : 'All';
+                let displayTournaments = tournaments;
+                if (mapFilter !== 'All') {
+                    displayTournaments = tournaments.filter(t => t.map === mapFilter);
+                }
+
+                let joinHTML = '';
+                if (displayTournaments.length === 0) {
+                    joinHTML = '<div style="text-align:center; width:100%; padding:20px; color:#888;">No matches found for this map.</div>';
+                } else {
+                    displayTournaments.forEach(t => { try { joinHTML += renderCard(t); } catch (err) { console.error("Card Error:", err); } });
+                }
+                joinContainer.innerHTML = joinHTML;
+                
+                const countEl = document.getElementById('totalTourCount');
+                if(countEl) countEl.innerText = `(${displayTournaments.length})`;
+            }
+
+            // 2. Render Home Tab (RESPECT FILTER)
+            if(homeContainer) {
+                homeContainer.innerHTML = '';
+                let filteredTournaments = tournaments;
+
+                // Apply Filter only for Home Tab
+                if (window.currentFilter !== 'All') {
+                    if (window.currentFilter === 'MyMatches') {
+                        filteredTournaments = tournaments.filter(t => window.registeredTournaments && window.registeredTournaments.has(t.name));
+                    } else {
+                        filteredTournaments = tournaments.filter(t => t.mode === window.currentFilter);
+                    }
+                }
+
+                let homeHTML = '';
+                if (filteredTournaments.length === 0) {
+                    homeHTML = '<div style="text-align:center; width:100%; grid-column:1/-1; padding:20px; color:#888;">No matches found for this filter.</div>';
+                } else {
+                    filteredTournaments.forEach(t => { try { homeHTML += renderCard(t); } catch (err) { console.error(err); } });
+                }
+                homeContainer.innerHTML = homeHTML;
+            }
+        };
+
+        // --- SLIDER LOGIC ---
+        const homeSliderRef = ref(db, 'slider_images');
+        onValue(homeSliderRef, (snapshot) => {
+            const container = document.getElementById('homeSlider');
+            const noticeContainer = document.getElementById('noticeSlider');
+            if (!container) return;
+
+            if (snapshot.exists()) {
+                const imageSlides = [];
+                const textSlides = [];
+                
+                snapshot.forEach(c => {
+                    const val = c.val();
+                    if(val.type === 'text') textSlides.push(val);
+                    else imageSlides.push(val); // Default to image if type missing
+                });
+                
+                // Simple CSS Scroll Snap Slider
+                let html = `<div style="display:flex; overflow-x:auto; scroll-snap-type:x mandatory; gap:10px; -webkit-overflow-scrolling:touch; scrollbar-width:none;">`;
+                
+                imageSlides.forEach(s => {
+                    if(!s.image) return; // Skip if image is missing to prevent broken UI
+                    // If linked tournament exists, make it clickable
+                    const clickAttr = s.linkedTournament ? `onclick="showRegistration('${escapeQuotes(s.linkedTournament.map)}', '${escapeQuotes(s.linkedTournament.name)}', 'Squad', 0, 48)"` : '';
+                    
+                    html += `
+                    <div style="min-width:100%; scroll-snap-align:center; position:relative; border-radius:18px; overflow:hidden; cursor:pointer;" ${clickAttr}>
+                        <img src="${s.image}" style="width:100%; height:180px; object-fit:cover; display:block;">
+                        ${s.title ? `<div style="position:absolute; bottom:0; left:0; width:100%; background:linear-gradient(to top, rgba(0,0,0,0.8), transparent); color:white; padding:15px 10px 10px; font-weight:bold; font-size:1.2rem;">${s.title}</div>` : ''}
+                    </div>`;
+                });
+                html += `</div>`;
+                container.innerHTML = html;
+
+                // Render Text Notices
+                if(textSlides.length > 0 && noticeContainer) {
+                    noticeContainer.style.display = 'flex';
+                    let noticeHtml = '';
+                    textSlides.forEach(s => {
+                        noticeHtml += `<div style="display:inline-block; background:#1f2933; padding:8px 15px; border-radius:20px; border:1px solid #22c55e; color:#fff; font-size:0.9rem;">📢 ${s.title}</div>`;
+                    });
+                    noticeContainer.innerHTML = noticeHtml;
+                } else if (noticeContainer) {
+                    noticeContainer.style.display = 'none';
+                }
+            }
+        });
+
+        onValue(upcomingRef, (snapshot) => {
+            if(snapshot.exists()) {
+                const tournaments = [];
+                // Convert object to array safely
+                snapshot.forEach(c => tournaments.push({ key: c.key, ...c.val() }));
+
+                // Sort by time (Nearest first)
+                tournaments.sort((a, b) => {
+                    const tA = a.time ? new Date(a.time).getTime() : 0;
+                    const tB = b.time ? new Date(b.time).getTime() : 0;
+                    return (isNaN(tA) ? 0 : tA) - (isNaN(tB) ? 0 : tB);
+                });
+
+                // Expose for Join Button Logic
+                window.activeTournaments = tournaments;
+
+                // Find next tournament for timer
+                const now = new Date().getTime();
+                let closestDiff = Infinity;
+                
+                snapshot.forEach(c => {
+                    const t = c.val();
+                    const tTime = new Date(t.time).getTime();
+                    const diff = tTime - now;
+                    if (diff > -1800000 && diff < closestDiff) { // -30 mins (active) to future
+                        closestDiff = diff;
+                        nextTournament = { ...t, key: c.key, timeMs: tTime };
+                    }
+                });
+                
+                // Update Prize Pool Display
+                if (nextTournament) {
+                    const p1 = parseInt(nextTournament.prize1 || 0);
+                    const p2 = parseInt(nextTournament.prize2 || 0);
+                    const p3 = parseInt(nextTournament.prize3 || 0);
+                    const total = p1 + p2 + p3;
+                    if(document.getElementById('dynamicPrizePool')) document.getElementById('dynamicPrizePool').innerText = `💰 Prize Pool: ₹${total}`;
+                    if(document.getElementById('prize1')) document.getElementById('prize1').innerText = `₹${p1}`;
+                    if(document.getElementById('prize2')) document.getElementById('prize2').innerText = `₹${p2}`;
+                    if(document.getElementById('prize3')) document.getElementById('prize3').innerText = `₹${p3}`;
+                    if(document.getElementById('prizeKill')) document.getElementById('prizeKill').innerText = `₹${nextTournament.perKill || 0}`;
+                    
+                    // Update Live Card Title
+                    const nmt = document.getElementById('nextMatchTitle');
+                    if(nmt) nmt.innerText = `${nextTournament.name} - Prize ₹${total}`;
+                }
+
+                window.renderTournaments();
+            } else {
+                window.activeTournaments = [];
+                if(document.getElementById('totalTourCount')) document.getElementById('totalTourCount').innerText = '(0)';
+                window.renderTournaments();
+            }
+            updateTimer();
+        });
+
+        // Dynamic Countdown Timer
+        setInterval(updateTimer, 1000);
+        
+        function updateTimer() {
+            const timerEl = document.getElementById("timer");
+            const roomInfoEl = document.getElementById("roomInfoDisplay");
+            
+            if (!nextTournament) {
+                timerEl.innerHTML = "No upcoming matches";
+                if(roomInfoEl) roomInfoEl.style.display = 'none';
+                return;
+            }
+            
+            const now = new Date().getTime();
+            const distance = nextTournament.timeMs - now;
+            
+            // Auto Reveal Logic (5 mins before)
+            if (distance < 300000 && distance > -1800000) {
+                // Check if user is registered for this tournament
+                const isRegistered = window.registeredTournaments && window.registeredTournaments.has(nextTournament.name);
+                
+                if(roomInfoEl && isRegistered) {
+                    roomInfoEl.style.display = 'block';
+                    document.getElementById('liveRoomId').innerText = nextTournament.roomId || "Wait...";
+                    document.getElementById('liveRoomPass').innerText = nextTournament.password || "...";
+                } else if (roomInfoEl) {
+                    roomInfoEl.style.display = 'none'; // Hide if not registered
+                }
+            } else {
+                if(roomInfoEl) roomInfoEl.style.display = 'none';
+            }
+            
+            if (distance < 0) {
+                timerEl.innerHTML = "LIVE NOW";
+                return;
+            }
+            
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            document.getElementById("timer").innerHTML = days + "d " + hours + "h " + minutes + "m " + seconds + "s ";
+        }
+    </script>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="nav">
+        <div class="nav-item active" onclick="navAction('home', this)">
+            <span class="nav-icon">🏠</span>
+            <span>Home</span>
+        </div>
+        <div class="nav-item" onclick="navAction('join', this)">
+            <span class="nav-icon">🎮</span>
+            <span>Matches</span>
+        </div>
+        <div class="nav-item" onclick="navAction('wallet', this)">
+            <span class="nav-icon">💰</span>
+            <span>Wallet</span>
+        </div>
+        <div class="nav-item" onclick="navAction('profile', this)">
+            <span class="nav-icon">👤</span>
+            <span>Profile</span>
+        </div>
+    </div>
+</body>
+</html>
