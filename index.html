@@ -94,6 +94,9 @@
       <!-- Options will be populated by JavaScript -->
     </div>
 
+    <!-- Edit Controls Button -->
+    <button id="edit-controls-btn" style="margin-top: 15px; background-color: #8e44ad;">EDIT TOUCH CONTROLS</button>
+
     <!-- Reset Progress Button -->
     <button id="reset-progress-btn" style="margin-top: 20px; background-color: #c0392b;">RESET PROGRESS (LOCK LEVELS)</button>
     
@@ -163,6 +166,18 @@
     <button id="resume-btn">RESUME</button>
     <button id="pause-restart-btn">RESTART</button>
     <button id="pause-home-btn">HOME</button>
+  </div>
+</div>
+
+<!-- Edit Controls UI (Visible only during editing) -->
+<div id="edit-ui" class="hidden">
+  <div class="edit-controls-bar">
+    <button id="save-controls-btn">SAVE & EXIT</button>
+    <button id="reset-controls-btn">RESET DEFAULTS</button>
+  </div>
+  <div class="edit-controls-slider">
+    <label for="control-size-slider">Selected Button Size:</label>
+    <input type="range" id="control-size-slider" min="0.5" max="2.0" step="0.1" value="1">
   </div>
 </div>
 

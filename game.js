@@ -30,8 +30,8 @@ const DASH_COOLDOWN = 60; // in frames (1 second at 60fps)
 let camera = {
   x: 0,
   y: 0,
-  width: canvas.width,
-  height: canvas.height,
+  width: 800,
+  height: 400,
   lerpFactor: 0.08 // A smaller value gives smoother camera movement
 };
 
@@ -90,6 +90,11 @@ const customDeathInput = document.getElementById('custom-death');
 const customCoinInput = document.getElementById('custom-coin');
 const customMusicInput = document.getElementById('custom-music');
 const tutorialBtn = document.getElementById('tutorial-btn');
+const editControlsBtn = document.getElementById('edit-controls-btn');
+const editUI = document.getElementById('edit-ui');
+const saveControlsBtn = document.getElementById('save-controls-btn');
+const resetControlsBtn = document.getElementById('reset-controls-btn');
+const controlSizeSlider = document.getElementById('control-size-slider');
 const privacyBtn = document.getElementById('privacy-btn');
 const homePrivacyBtn = document.getElementById('home-privacy-btn'); // New button on Home Screen
 const loadingScreen = document.getElementById('loading-screen');
@@ -118,6 +123,26 @@ const pauseMenu = document.getElementById('pause-menu');
 const resumeBtn = document.getElementById('resume-btn');
 const pauseRestartBtn = document.getElementById('pause-restart-btn');
 const pauseHomeBtn = document.getElementById('pause-home-btn');
+let isEditingControls = false;
+let selectedEditButton = null; // Track which button is being resized
+
+// --- Resolution & Scaling Logic ---
+let scaleFactor = 1;
+function resizeGame() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    // Calculate scale to fit height (Base height is 400)
+    scaleFactor = canvas.height / 400;
+    
+    // Update camera logical size
+    camera.width = canvas.width / scaleFactor;
+    camera.height = canvas.height / scaleFactor;
+    
+    generateStars(); // Regenerate stars for new size
+}
+window.addEventListener('resize', resizeGame);
+
 function playSound(sound) {
     if (soundEnabled) {
         sound.play();
@@ -252,6 +277,192 @@ tutorialBtn.addEventListener('click', () => {
     tutorialScreen.classList.remove('hidden');
 });
 
+// --- Edit Controls Logic ---
+function selectEditButton(btn) {
+    if (selectedEditButton) {
+        // Reset style of previously selected button
+        selectedEditButton.style.borderColor = "rgba(255, 255, 255, 0.5)"; 
+        selectedEditButton.style.zIndex = "";
+    }
+    selectedEditButton = btn;
+    if (btn) {
+        // Highlight new selection
+        btn.style.borderColor = "#e74c3c"; // Red highlight
+        btn.style.zIndex = "1000"; // Bring to top
+        
+        // Update slider to match this button's current size
+        const currentWidth = parseFloat(btn.style.width) || 70;
+        const scale = currentWidth / 70;
+        if (controlSizeSlider) controlSizeSlider.value = scale;
+    }
+}
+
+function applySavedControls() {
+    const saved = JSON.parse(localStorage.getItem('dravexoControlLayout'));
+    if (saved) {
+        ['left-btn', 'right-btn', 'jump-btn', 'dash-btn', 'grapple-btn'].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn && saved[id]) {
+                btn.style.position = 'fixed';
+                btn.style.left = saved[id].left;
+                btn.style.top = saved[id].top;
+                btn.style.bottom = 'auto';
+                btn.style.right = 'auto';
+                
+                // Apply saved size if it exists
+                if (saved[id].width) btn.style.width = saved[id].width;
+                if (saved[id].height) btn.style.height = saved[id].height;
+                if (saved[id].fontSize) btn.style.fontSize = saved[id].fontSize;
+            }
+        });
+    }
+}
+// Apply saved positions on startup
+applySavedControls();
+
+if (editControlsBtn) {
+    editControlsBtn.addEventListener('click', () => {
+        playSound(uiClickSound);
+        settingsMenu.classList.add('hidden');
+        homeScreen.classList.add('hidden'); // Hide home screen to see controls clearly
+        
+        // Show controls and edit UI
+        if (touchControls) touchControls.classList.remove('hidden');
+        editUI.classList.remove('hidden');
+        isEditingControls = true;
+
+        // Visual cue for editing
+        document.querySelectorAll('#touch-controls button').forEach(btn => {
+            btn.style.border = '2px dashed #f1c40f';
+            btn.style.transform = 'scale(1.1)';
+        });
+        
+        // Auto-select the jump button initially so slider works immediately
+        const jumpBtn = document.getElementById('jump-btn');
+        if (jumpBtn) selectEditButton(jumpBtn);
+    });
+}
+
+if (controlSizeSlider) {
+    controlSizeSlider.addEventListener('input', (e) => {
+        const scale = parseFloat(e.target.value);
+        if (selectedEditButton) {
+            const baseSize = 70; // Default CSS size
+            const baseFont = 24; // Default font size
+            selectedEditButton.style.width = (baseSize * scale) + 'px';
+            selectedEditButton.style.height = (baseSize * scale) + 'px';
+            selectedEditButton.style.fontSize = (baseFont * scale) + 'px';
+        }
+    });
+}
+
+if (saveControlsBtn) {
+    saveControlsBtn.addEventListener('click', () => {
+        playSound(uiClickSound);
+        // Save positions
+        const layout = {};
+        ['left-btn', 'right-btn', 'jump-btn', 'dash-btn', 'grapple-btn'].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                const rect = btn.getBoundingClientRect();
+                layout[id] = {
+                    left: rect.left + 'px',
+                    top: rect.top + 'px'
+                };
+                // Save individual sizes
+                if (btn.style.width) layout[id].width = btn.style.width;
+                if (btn.style.height) layout[id].height = btn.style.height;
+                if (btn.style.fontSize) layout[id].fontSize = btn.style.fontSize;
+
+                // Reset visual styles
+                btn.style.border = '';
+                btn.style.transform = '';
+            }
+        });
+        localStorage.setItem('dravexoControlLayout', JSON.stringify(layout));
+        
+        isEditingControls = false;
+        editUI.classList.add('hidden');
+        homeScreen.classList.remove('hidden');
+        settingsMenu.classList.remove('hidden');
+        
+        // Hide controls again if we are not playing
+        if (gameState !== 'PLAYING') {
+            touchControls.classList.add('hidden');
+        }
+    });
+}
+
+if (resetControlsBtn) {
+    resetControlsBtn.addEventListener('click', () => {
+        playSound(uiClickSound);
+        if (confirm("Reset controls to default positions and size?")) {
+            localStorage.removeItem('dravexoControlLayout');
+            
+            // Reset styles
+            ['left-btn', 'right-btn', 'jump-btn', 'dash-btn', 'grapple-btn'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    btn.style.position = ''; // Revert to CSS flexbox
+                    btn.style.left = '';
+                    btn.style.top = '';
+                    btn.style.width = ''; // Revert to CSS size
+                    btn.style.height = '';
+                    btn.style.fontSize = '';
+                }
+            });
+            controlSizeSlider.value = 1;
+        }
+    });
+}
+
+function makeDraggable(btn) {
+    let offsetX, offsetY;
+    
+    const onStart = (e) => {
+        if (!isEditingControls) return;
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const rect = btn.getBoundingClientRect();
+        offsetX = clientX - rect.left;
+        offsetY = clientY - rect.top;
+        
+        // Select this button for resizing
+        selectEditButton(btn);
+
+        const onMove = (moveEvent) => {
+            if (!isEditingControls) return;
+            moveEvent.preventDefault();
+            const moveX = moveEvent.touches ? moveEvent.touches[0].clientX : moveEvent.clientX;
+            const moveY = moveEvent.touches ? moveEvent.touches[0].clientY : moveEvent.clientY;
+            
+            btn.style.position = 'fixed';
+            btn.style.left = (moveX - offsetX) + 'px';
+            btn.style.top = (moveY - offsetY) + 'px';
+            btn.style.bottom = 'auto';
+            btn.style.right = 'auto';
+        };
+
+        const onEnd = () => {
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('touchend', onEnd);
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onEnd);
+        };
+
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('touchend', onEnd);
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onEnd);
+    };
+
+    btn.addEventListener('touchstart', onStart, { passive: false });
+    btn.addEventListener('mousedown', onStart);
+}
+
 if (privacyBtn) {
     privacyBtn.addEventListener('click', () => {
         playSound(uiClickSound);
@@ -287,6 +498,7 @@ if (resetProgressBtn) {
     resetProgressBtn.addEventListener('click', () => {
         if (confirm("Are you sure you want to lock all levels? This will reset your progress.")) {
             localStorage.setItem('dravexoMaxLevel', '0');
+            localStorage.setItem('dravexoCurrentLevel', '0');
             maxLevelReached = 0;
             
             // Lock Session 1 and Session 2 buttons immediately
@@ -347,6 +559,13 @@ function populateLevelSelect() {
             btn.innerText = index + 1;
             btn.addEventListener('click', () => {
                 playSound(uiClickSound);
+                // Force landscape mode on mobile
+                if (screen.orientation && screen.orientation.lock) {
+                    if (document.documentElement.requestFullscreen) {
+                        document.documentElement.requestFullscreen().catch(() => {});
+                    }
+                    screen.orientation.lock('landscape').catch(() => {});
+                }
                 currentLevelIndex = index;
                 score = 0; // Reset score for new run
                 gameState = 'PLAYING';
@@ -884,8 +1103,8 @@ function generateStars() {
     const numStars = 150;
     for (let i = 0; i < numStars; i++) {
         stars.push({
-            x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height,
+            x: Math.random() * camera.width, // Use logical width
+            y: Math.random() * camera.height,
             size: Math.random() * 2
         });
     }
@@ -966,6 +1185,9 @@ function loadLevel(levelIndex) {
   playerStart = JSON.parse(JSON.stringify(level.playerStart));
   projectiles = []; // Clear projectiles on new level
 
+  // Auto-save the current level index so the player can resume later
+  localStorage.setItem('dravexoCurrentLevel', currentLevelIndex);
+
   // --- Apply Difficulty Scaling to moving platforms ---
   const difficultyFactor = getDifficultyFactor();
   platforms.forEach(p => {
@@ -996,7 +1218,7 @@ function loadLevel(levelIndex) {
   // Center camera on player start, then clamp
   camera.x = player.x + player.w / 2 - camera.width / 2;
   camera.y = player.y + player.h / 2 - camera.height / 2;
-  clampCamera(level.width || canvas.width, level.height || canvas.height);
+  clampCamera(level.width || camera.width, level.height || camera.height);
   spawnEnemies();
   spawnCoins();
 }
@@ -1010,6 +1232,10 @@ function reset(keepLevel = false) {
     player.color = characters[selectedCharacter].color; // Set player color on reset
     gameState = 'PLAYING';
     pauseBtn.classList.remove('hidden'); // Show pause button when playing
+    gameUI.classList.remove('hidden'); // Ensure HUD is visible
+    if (touchControls && touchEnabled) {
+        touchControls.classList.remove('hidden'); // Ensure touch controls are visible
+    }
     loadLevel(currentLevelIndex);
 
 }
@@ -1211,7 +1437,7 @@ function update() {
     // Move the platform if it has a velocity
     if (p.dx) {
       p.x += p.dx;
-      const levelWidth = levels[currentLevelIndex].width || canvas.width;
+      const levelWidth = levels[currentLevelIndex].width || camera.width;
       // Bounce off the level edges, not canvas edges
       if (p.x + p.w > levelWidth || p.x < 0) {
         p.dx *= -1;
@@ -1571,8 +1797,8 @@ function update() {
 
   // --- Camera Follow Logic ---
   const level = levels[currentLevelIndex];
-  const levelWidth = level.width || canvas.width;
-  const levelHeight = level.height || canvas.height;
+  const levelWidth = level.width || camera.width;
+  const levelHeight = level.height || camera.height;
 
   // Target for the camera to look at (center of the player)
   const targetX = player.x + player.w / 2 - camera.width / 2;
@@ -1615,6 +1841,10 @@ function draw3DBlock(x, y, w, h, color, depth = 4) {
 }
 
 function draw() {
+  // Apply scaling for High DPI / Fullscreen
+  ctx.save();
+  ctx.scale(scaleFactor, scaleFactor);
+
   // Draw the selected background animation
   drawBackground();
   
@@ -1912,35 +2142,36 @@ function draw() {
   }
 
   ctx.restore();
+  ctx.restore(); // Restore the scaleFactor save
 
 }
 
 function drawBackground() {
     // Clear screen and draw base background
     if (selectedBackgroundAnimation === 'indianGradient') {
-        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        const gradient = ctx.createLinearGradient(0, 0, 0, camera.height);
         gradient.addColorStop(0, '#ff9933'); // Saffron
         gradient.addColorStop(0.5, '#ffffff'); // White
         gradient.addColorStop(1, '#138808'); // Green
         ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0, 0, camera.width, camera.height);
 
         // Ashoka Chakra
         ctx.strokeStyle = '#000080';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(canvas.width / 2, canvas.height / 2, 50, 0, Math.PI * 2);
+        ctx.arc(camera.width / 2, camera.height / 2, 50, 0, Math.PI * 2);
         ctx.stroke();
         for (let i = 0; i < 24; i++) {
             const angle = (i * 15) * Math.PI / 180;
             ctx.beginPath();
-            ctx.moveTo(canvas.width / 2, canvas.height / 2);
-            ctx.lineTo(canvas.width / 2 + Math.cos(angle) * 50, canvas.height / 2 + Math.sin(angle) * 50);
+            ctx.moveTo(camera.width / 2, camera.height / 2);
+            ctx.lineTo(camera.width / 2 + Math.cos(angle) * 50, camera.height / 2 + Math.sin(angle) * 50);
             ctx.stroke();
         }
     } else if (selectedBackgroundAnimation === 'starfield') {
         ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0, 0, camera.width, camera.height);
         ctx.fillStyle = 'white';
         stars.forEach(star => {
             ctx.beginPath();
@@ -1951,7 +2182,7 @@ function drawBackground() {
         // Dynamic background color based on level
         const hue = (currentLevelIndex * 137) % 360; // Rotate hue for each level
         ctx.fillStyle = `hsl(${hue}, 30%, 20%)`;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0, 0, camera.width, camera.height);
     }
 
     // Draw Parallax Background on top of selected static/animated background
@@ -1960,8 +2191,8 @@ function drawBackground() {
         if (!layer.img.complete || layer.img.naturalHeight === 0) return;
         const scrollX = (camera.x * layer.factor);
         const x = - (scrollX % layer.img.width);
-        ctx.drawImage(layer.img, x, 0, layer.img.width, canvas.height);
-        ctx.drawImage(layer.img, x + layer.img.width, 0, layer.img.width, canvas.height);
+        ctx.drawImage(layer.img, x, 0, layer.img.width, camera.height);
+        ctx.drawImage(layer.img, x + layer.img.width, 0, layer.img.width, camera.height);
     });
 }
 
@@ -1989,6 +2220,7 @@ function loop() {
 backgroundMusic.stop();
 
 // Initial Setup
+resizeGame(); // Set initial size
 generateStars();
 loadLevel(0); // Load level 1 background
 populateCharacterSelect(); // Create character options
@@ -2070,14 +2302,20 @@ pauseHomeBtn.addEventListener('click', () => {
 // Start Button Logic
 startBtn.addEventListener('click', () => {
     playSound(uiClickSound);
-    // Continue from the highest level reached
-    currentLevelIndex = Math.min(maxLevelReached, levels.length - 1);
-    score = 0;
-    gameState = 'PLAYING';
-    hideHomeScreen();
-    reset(true);
-    backgroundMusic.play();
-    window.focus();
+    // Force landscape mode on mobile
+    if (screen.orientation && screen.orientation.lock) {
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(() => {});
+        }
+        screen.orientation.lock('landscape').catch(() => {});
+    }
+    
+    // Open Session 1 Level Select Screen directly
+    currentSessionStart = 0;
+    currentSessionEnd = 20;
+    document.querySelector('#level-select-screen h2').innerText = "SESSION 1";
+    populateLevelSelect();
+    levelSelectScreen.classList.remove('hidden');
 });
 
 function setupTouchControls() {
@@ -2090,10 +2328,12 @@ function setupTouchControls() {
   if (!leftBtn) return; // Don't run if controls aren't in the DOM
 
   const handleInput = (e, key, isPressed) => {
+    if (isEditingControls) return; // Disable game input while editing
     if (e.cancelable) e.preventDefault(); // Stop browser from scrolling or zooming
     
     if (isPressed && !keys[key]) {
         justPressed[key] = true;
+        if (navigator.vibrate) navigator.vibrate(50); // Vibrate for 50ms
     }
     keys[key] = isPressed;
   };
@@ -2108,6 +2348,13 @@ function setupTouchControls() {
       btn.addEventListener('mouseup', e => handleInput(e, key, false));
       btn.addEventListener('mouseleave', e => handleInput(e, key, false));
   };
+
+  // Enable dragging for editing
+  makeDraggable(leftBtn);
+  makeDraggable(rightBtn);
+  makeDraggable(jumpBtn);
+  makeDraggable(dashBtn);
+  makeDraggable(grappleBtn);
 
   addListeners(leftBtn, 'a');
   addListeners(rightBtn, 'd');
