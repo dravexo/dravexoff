@@ -84,6 +84,7 @@ const resetProgressBtn = document.getElementById('reset-progress-btn');
 const soundToggle = document.getElementById('sound-toggle');
 const volumeSlider = document.getElementById('volume-slider');
 const touchToggle = document.getElementById('touch-toggle');
+const graphicsToggle = document.getElementById('graphics-toggle');
 const musicVolumeSlider = document.getElementById('music-volume-slider');
 const customJumpInput = document.getElementById('custom-jump');
 const customDeathInput = document.getElementById('custom-death');
@@ -129,8 +130,11 @@ let selectedEditButton = null; // Track which button is being resized
 // --- Resolution & Scaling Logic ---
 let scaleFactor = 1;
 function resizeGame() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    // Optimize: Set a fixed internal resolution for better performance (Smoothness)
+    const targetHeight = 540; 
+    const aspectRatio = window.innerWidth / window.innerHeight;
+    canvas.height = targetHeight;
+    canvas.width = targetHeight * aspectRatio;
     
     // Calculate scale to fit height (Base height is 400)
     scaleFactor = canvas.height / 400;
@@ -140,6 +144,7 @@ function resizeGame() {
     camera.height = canvas.height / scaleFactor;
     
     generateStars(); // Regenerate stars for new size
+    updateBackgroundCache(); // Update cached background
 }
 window.addEventListener('resize', resizeGame);
 
@@ -239,6 +244,28 @@ if (touchToggle) {
         }
     });
 }
+
+// --- Graphics Toggle Logic ---
+let graphicsMode = localStorage.getItem('dravexoGraphics') || 'pixelated';
+
+function applyGraphics() {
+    if (graphicsMode === 'pixelated') {
+        canvas.style.imageRendering = 'pixelated';
+    } else {
+        canvas.style.imageRendering = 'auto'; // Smooth/Blurry
+    }
+}
+
+if (graphicsToggle) {
+    graphicsToggle.checked = (graphicsMode === 'pixelated');
+    graphicsToggle.addEventListener('change', () => {
+        graphicsMode = graphicsToggle.checked ? 'pixelated' : 'auto';
+        localStorage.setItem('dravexoGraphics', graphicsMode);
+        applyGraphics();
+        playSound(uiClickSound);
+    });
+}
+applyGraphics(); // Apply on startup
 
 // --- Volume Slider Logic ---
 if (volumeSlider) {
@@ -606,6 +633,7 @@ function populateBackgroundAnimationSelect() {
             playSound(uiClickSound);
             selectedBackgroundAnimation = event.target.value;
             localStorage.setItem('dravexoBackgroundAnimation', selectedBackgroundAnimation);
+            updateBackgroundCache(); // Refresh cache on change
         });
 
         const span = document.createElement('span');
@@ -1834,6 +1862,11 @@ function draw3DBlock(x, y, w, h, color, depth = 4) {
     ctx.fill();
     ctx.fillStyle = "rgba(255, 255, 255, 0.3)"; // Highlight overlay
     ctx.fill();
+    
+    // Edge definition (Graphics improvement)
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgba(0,0,0,0.15)";
+    ctx.strokeRect(x, y, w, h);
 
     // Front Face
     ctx.fillStyle = color;
@@ -2146,29 +2179,45 @@ function draw() {
 
 }
 
-function drawBackground() {
-    // Clear screen and draw base background
+// --- Background Optimization ---
+let bgCache = document.createElement('canvas');
+
+function updateBackgroundCache() {
+    // Size the cache to match the logical camera size
+    bgCache.width = camera.width; 
+    bgCache.height = camera.height;
+    const ctxBg = bgCache.getContext('2d');
+
     if (selectedBackgroundAnimation === 'indianGradient') {
-        const gradient = ctx.createLinearGradient(0, 0, 0, camera.height);
+        const gradient = ctxBg.createLinearGradient(0, 0, 0, bgCache.height);
         gradient.addColorStop(0, '#ff9933'); // Saffron
         gradient.addColorStop(0.5, '#ffffff'); // White
         gradient.addColorStop(1, '#138808'); // Green
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, camera.width, camera.height);
+        ctxBg.fillStyle = gradient;
+        ctxBg.fillRect(0, 0, bgCache.width, bgCache.height);
 
         // Ashoka Chakra
-        ctx.strokeStyle = '#000080';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(camera.width / 2, camera.height / 2, 50, 0, Math.PI * 2);
-        ctx.stroke();
+        ctxBg.strokeStyle = '#000080';
+        ctxBg.lineWidth = 2;
+        ctxBg.beginPath();
+        ctxBg.arc(bgCache.width / 2, bgCache.height / 2, 50, 0, Math.PI * 2);
+        ctxBg.stroke();
+        
+        ctxBg.beginPath();
         for (let i = 0; i < 24; i++) {
             const angle = (i * 15) * Math.PI / 180;
-            ctx.beginPath();
-            ctx.moveTo(camera.width / 2, camera.height / 2);
-            ctx.lineTo(camera.width / 2 + Math.cos(angle) * 50, camera.height / 2 + Math.sin(angle) * 50);
-            ctx.stroke();
+            ctxBg.moveTo(bgCache.width / 2, bgCache.height / 2);
+            ctxBg.lineTo(bgCache.width / 2 + Math.cos(angle) * 50, bgCache.height / 2 + Math.sin(angle) * 50);
         }
+        ctxBg.stroke();
+    }
+}
+
+function drawBackground() {
+    // Clear screen and draw base background
+    if (selectedBackgroundAnimation === 'indianGradient') {
+        // Use cached image instead of redrawing paths every frame
+        ctx.drawImage(bgCache, 0, 0);
     } else if (selectedBackgroundAnimation === 'starfield') {
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, camera.width, camera.height);
