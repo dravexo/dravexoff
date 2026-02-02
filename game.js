@@ -1113,18 +1113,18 @@ function createSound(src, loop = false, isMusic = false) {
 }
 
 // Load your sound files here. Make sure you have an 'assets' folder.
-let jumpSound = createSound("assets/jump.wav", false);
-let coinSound = createSound("assets/coin.wav");
-let stompSound = createSound("assets/stomp.wav");
-let deathSound = createSound("assets/death.wav");
-let levelWinSound = createSound("assets/win.wav");
-let powerUpSound = createSound("assets/powerup.wav");
-let grappleSound = createSound("assets/grapple.wav");
-let dashSound = createSound("assets/dash.wav");
-let shootSound = createSound("assets/laser.wav", false); // Sound for the new enemy
-let backgroundMusic = createSound("assets/music.mp3", true, true);
-let uiClickSound = createSound("assets/click.wav");
-let landSound = createSound("assets/land.wav");
+let jumpSound = createSound("jump.wav", false);
+let coinSound = createSound("coin.wav");
+let stompSound = createSound("stomp.wav");
+let deathSound = createSound("death.wav");
+let levelWinSound = createSound("win.wav");
+let powerUpSound = createSound("powerup.wav");
+let grappleSound = createSound("grapple.wav");
+let dashSound = createSound("dash.wav");
+let shootSound = createSound("laser.wav", false); // Sound for the new enemy
+let backgroundMusic = createSound("music.mp3", true, true);
+let uiClickSound = createSound("click.wav");
+let landSound = createSound("land.wav");
 
 function generateStars() {
     stars = []; // Clear existing stars
@@ -1187,8 +1187,8 @@ function createImage(src, factor) {
 
 // Load background images. Assumes you have these in your 'assets' folder.
 // The factor controls the scroll speed (lower = slower/further away).
-backgroundLayers.push(createImage("assets/bg_far.png", 0.2));
-backgroundLayers.push(createImage("assets/bg_mid.png", 0.5));
+backgroundLayers.push(createImage("bg_far.png", 0.2));
+backgroundLayers.push(createImage("bg_mid.png", 0.5));
 
 function clampCamera(levelWidth, levelHeight) {
     if (camera.x < 0) camera.x = 0;
