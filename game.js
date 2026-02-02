@@ -400,7 +400,7 @@ function populateBackgroundAnimationSelect() {
 
 // --- Character Data & Selection ---
 const characters = {
-    'cyan': { name: 'Dravexo', color: 'cyan' },
+    'cyan': { name: 'Pixel Bot', color: 'cyan' },
     'green': { name: 'Slime', color: '#2ecc71' },
     'purple': { name: 'Void', color: '#9b59b6' },
     'orange': { name: 'Inferno', color: '#e67e22' },
@@ -821,6 +821,19 @@ function createSound(src, loop = false, isMusic = false) {
       sound.volume = Math.max(0, Math.min(1, vol)); // Clamp volume
       
       sound.currentTime = 0; // Allow sound to be replayed quickly
+      const playPromise = sound.play();
+      if (playPromise !== undefined) {
+          playPromise.catch(e => console.warn(`Sound error (${src}):`, e));
+      }
+    },
+    resume: () => {
+      if (!soundEnabled) return;
+      clearInterval(fadeInterval);
+      
+      let vol = isMusic ? musicVolume : globalVolume;
+      if (!Number.isFinite(vol)) vol = 0.5; 
+      sound.volume = Math.max(0, Math.min(1, vol)); 
+      
       const playPromise = sound.play();
       if (playPromise !== undefined) {
           playPromise.catch(e => console.warn(`Sound error (${src}):`, e));
@@ -2027,6 +2040,7 @@ pauseBtn.addEventListener('click', () => {
         gameState = 'PAUSED';
         pauseMenu.classList.remove('hidden');
         if (touchControls) touchControls.classList.add('hidden'); // Always hide on pause
+        backgroundMusic.fadeOut(500);
     }
 });
 
@@ -2037,6 +2051,7 @@ resumeBtn.addEventListener('click', () => {
     if (touchControls && touchEnabled) {
         touchControls.classList.remove('hidden');
     }
+    backgroundMusic.resume();
 });
 
 pauseRestartBtn.addEventListener('click', () => {
