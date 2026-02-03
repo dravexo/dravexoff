@@ -1061,13 +1061,26 @@ function createSound(src, loop = false, isMusic = false) {
   return {
     play: () => {
       if (!soundEnabled) return;
+
+      // For short, non-looping sound effects, we clone the audio element.
+      // This allows multiple instances of the same sound to overlap,
+      // preventing them from cutting each other off (e.g., collecting coins quickly).
+      if (!isMusic && !loop) {
+          const clone = sound.cloneNode();
+          clone.volume = Math.max(0, Math.min(1, globalVolume));
+          const playPromise = clone.play();
+          if (playPromise !== undefined) {
+              playPromise.catch(e => {});
+          }
+          return;
+      }
+
+      // For music or looping sounds, we use a single audio element.
       clearInterval(fadeInterval);
-      
       let vol = isMusic ? musicVolume : globalVolume;
-      if (!Number.isFinite(vol)) vol = 0.5; // Safety check
-      sound.volume = Math.max(0, Math.min(1, vol)); // Clamp volume
-      
-      sound.currentTime = 0; // Allow sound to be replayed quickly
+      if (!Number.isFinite(vol)) vol = 0.5;
+      sound.volume = Math.max(0, Math.min(1, vol));
+      sound.currentTime = 0; // Restart the sound from the beginning
       const playPromise = sound.play();
       if (playPromise !== undefined) {
           playPromise.catch(e => console.warn(`Sound error (${src}):`, e));
