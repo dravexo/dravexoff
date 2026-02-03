@@ -69,7 +69,6 @@ let selectedBackgroundAnimation = localStorage.getItem('dravexoBackgroundAnimati
 const homeScreen = document.getElementById('home-screen');
 const startBtn = document.getElementById('start-btn');
 const newGameBtn = document.getElementById('new-game-btn');
-const levelsBtn = document.getElementById('levels-btn');
 const characterBtn = document.getElementById('character-btn');
 const session2Btn = document.getElementById('session2-btn');
 const highScoreDisplay = document.getElementById('ui-highscore');
@@ -183,6 +182,7 @@ function showHomeScreen() {
     pauseBtn.classList.add('hidden'); // Hide pause button on home screen
     if (touchControls) touchControls.classList.add('hidden');
     if (highScoreDisplay) highScoreDisplay.innerText = highScore;
+    backgroundMusic.resume(); // Ensure music plays on the home screen
     canvas.style.display = 'none'; // Hide canvas so home screen appears separately
 }
 
@@ -527,12 +527,6 @@ if (resetProgressBtn) {
             localStorage.setItem('dravexoMaxLevel', '0');
             localStorage.setItem('dravexoCurrentLevel', '0');
             maxLevelReached = 0;
-            
-            // Lock Session 1 and Session 2 buttons immediately
-            if (levelsBtn) {
-                levelsBtn.disabled = true;
-                levelsBtn.innerText = 'SESSION 1 🔒';
-            }
             if (session2Btn) {
                 session2Btn.disabled = true;
                 session2Btn.innerText = "SESSION 2 🔒";
@@ -548,15 +542,6 @@ if (resetProgressBtn) {
 let currentSessionStart = 0;
 let currentSessionEnd = 20;
 
-levelsBtn.addEventListener('click', () => {
-    playSound(uiClickSound);
-    currentSessionStart = 0;
-    currentSessionEnd = 20;
-    document.querySelector('#level-select-screen h2').innerText = "SESSION 1";
-    populateLevelSelect();
-    levelSelectScreen.classList.remove('hidden');
-});
-
 session2Btn.addEventListener('click', () => {
     playSound(uiClickSound);
     currentSessionStart = 20;
@@ -569,6 +554,7 @@ session2Btn.addEventListener('click', () => {
 closeLevelsBtn.addEventListener('click', () => {
     playSound(uiClickSound);
     levelSelectScreen.classList.add('hidden');
+    homeScreen.classList.remove('hidden');
 });
 
 function populateLevelSelect() {
@@ -701,6 +687,7 @@ function populateCharacterSelect() {
 
 characterBtn.addEventListener('click', () => {
     playSound(uiClickSound);
+    homeScreen.classList.add('hidden');
     populateCharacterSelect(); // Refresh selection state
     characterSelectScreen.classList.remove('hidden');
 });
@@ -708,6 +695,7 @@ characterBtn.addEventListener('click', () => {
 closeCharacterBtn.addEventListener('click', () => {
     playSound(uiClickSound);
     characterSelectScreen.classList.add('hidden');
+    homeScreen.classList.remove('hidden');
 });
 
 // --- LEVEL DATA ---
@@ -1316,8 +1304,8 @@ function spawnCoins() {
 }
 
 function playerDie() {
-    deathSound.play();
-    backgroundMusic.stop();
+    playSound(deathSound);
+    backgroundMusic.fadeOut(1000); // Fade out music on death instead of stopping abruptly
     gameState = 'GAME_OVER';
 
     const finalScore = Math.floor(score / 10);
@@ -1812,12 +1800,12 @@ function update() {
       levelCompleteScreen.classList.remove('hidden');
       gameUI.classList.add('hidden');
       pauseBtn.classList.add('hidden');
-      backgroundMusic.stop();
+      // Let music continue playing on the level complete screen
       gameState = 'LEVEL_COMPLETE';
       // loadLevel will be called by the next level button
     } else {
       gameState = 'GAME_WON';
-      backgroundMusic.stop();
+      // Let music continue playing on the win screen
       // Check and set high score when the game is won
       const finalScore = Math.floor(score / 10);
       if (finalScore > highScore) {
@@ -2372,6 +2360,8 @@ startBtn.addEventListener('click', () => {
         screen.orientation.lock('landscape').catch(() => {});
     }
     
+    homeScreen.classList.add('hidden');
+
     // Open Session 1 Level Select Screen directly
     currentSessionStart = 0;
     currentSessionEnd = 20;

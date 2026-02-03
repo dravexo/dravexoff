@@ -595,30 +595,37 @@ input:checked + .slider:before {
 /* Character Select Screen */
 #character-select-screen {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(44, 62, 80, 0.95);
-  backdrop-filter: blur(10px);
-  border: 2px solid #1abc9c;
-  padding: 30px;
-  border-radius: 15px;
-  width: 80%;
-  max-width: 500px;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 25px;
   z-index: 110;
   text-align: center;
-  box-shadow: 0 0 30px rgba(0,0,0,0.8);
-  animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#character-select-screen h2 {
+  font-size: 40px;
+  color: #f1c40f;
+  font-family: 'Arial Black', sans-serif;
+  text-shadow: 2px 2px 0 #000;
 }
 
 #close-character-btn {
-  margin-top: 20px;
-  padding: 10px 20px;
+  padding: 10px 30px;
   background: #e74c3c;
   color: white;
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  font-size: 18px;
 }
 
 /* Character Selection Styling (Inside Settings) */
