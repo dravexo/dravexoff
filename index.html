@@ -31,15 +31,42 @@
 
   <div id="game-banner">
     <img src="logo.png" alt="Pixel Bot" class="game-logo">
-    <h1 class="banner-title">DRAVEXO</h1>
-    <!-- Settings Button (Moved inside Banner) -->
-    <button id="settings-icon-btn">⚙️</button>
+      
+    <div id="currency-display">💰 
+      <span id="total-coins-display">0</span>
+    </div>
+    <button id="daily-reward-btn">🎁 <span class="reward-text">REWARD</span></button>
+    <button id="watch-ad-btn">📺 <span class="ad-text">GET 50</span></button>
   </div>
-  <button id="start-btn">PLAY GAME</button>
+
+  <!-- Side Buttons Container -->
+  <div id="menu-buttons-container">
+    <div class="menu-column left">
+      <button id="character-btn" class="menu-icon-btn">
+        <span class="btn-icon">👤</span>
+        <span class="btn-label">CHARS</span>
+      </button>
+      <button id="bg-anim-btn" class="menu-icon-btn">
+        <span class="btn-icon">🌄</span>
+        <span class="btn-label">BG</span>
+      </button>
+    </div>
+
+    <button id="start-btn">▶ PLAY GAME</button>
+    
+    <div class="menu-column right">
+      <button id="land-btn" class="menu-icon-btn">
+        <span class="btn-icon">🎨</span>
+        <span class="btn-label">LAND</span>
+      </button>
+      <button id="settings-icon-btn" class="menu-icon-btn">
+        <span class="btn-icon">⚙️</span>
+        <span class="btn-label">SETTING</span>
+      </button>
+    </div>
+  </div>
+
   <button id="new-game-btn" class="hidden">NEW GAME</button>
-  <button id="character-btn">CHARACTERS</button>
-  <button id="session2-btn" class="hidden" disabled>SESSION 2 🔒</button>
-  <button id="home-privacy-btn">PRIVACY POLICY</button>
 
   <!-- Settings Menu -->
   <div id="settings-menu" class="hidden">
@@ -95,12 +122,6 @@
       <input type="file" id="custom-music" accept="audio/*">
     </div>
 
-    <!-- Background Animation Selection -->
-    <h3 class="hanger-title" style="margin-top: 30px;">BACKGROUND ANIMATION</h3>
-    <div id="background-animation-select" class="setting-row" style="flex-direction: column; align-items: flex-start;">
-      <!-- Options will be populated by JavaScript -->
-    </div>
-
     <!-- Edit Controls Button -->
     <button id="edit-controls-btn" style="margin-top: 15px; background-color: #8e44ad;">EDIT TOUCH CONTROLS</button>
 
@@ -131,11 +152,70 @@
   </div>
 </div>
 
+<!-- Internet Check Popup -->
+<div id="internet-popup" class="hidden">
+  <h2>NO INTERNET</h2>
+  <p>Please check your internet connection.</p>
+  <button id="close-internet-btn">OK</button>
+</div>
+
+<!-- Message Popup (Success/Error) -->
+<div id="message-popup" class="hidden">
+  <h2 id="message-title">MESSAGE</h2>
+  <p id="message-text">Text goes here</p>
+  <button id="message-ok-btn">OK</button>
+</div>
+
+<!-- Confirmation Popup (Buy?) -->
+<div id="confirm-popup" class="hidden">
+  <h2 id="confirm-title">CONFIRM</h2>
+  <p id="confirm-text">Are you sure?</p>
+  <div class="confirm-buttons">
+    <button id="confirm-yes-btn">YES</button>
+    <button id="confirm-no-btn">NO</button>
+  </div>
+</div>
+
+<!-- Daily Reward Popup -->
+<div id="daily-reward-popup" class="hidden">
+  <button id="daily-reward-close-x">×</button>
+  <h2>DAILY REWARD</h2>
+  <div id="daily-reward-grid"></div>
+  <p id="daily-reward-message">Come back tomorrow!</p>
+  <button id="claim-reward-btn">CLAIM</button>
+  <button id="close-reward-btn">CLOSE</button>
+</div>
+
 <!-- Character Select Screen -->
 <div id="character-select-screen" class="hidden">
   <h2>SELECT CHARACTER</h2>
   <div id="character-list"></div>
   <button id="close-character-btn">BACK</button>
+</div>
+
+<!-- Background Select Screen -->
+<div id="background-select-screen" class="hidden">
+  <h2>SELECT BACKGROUND</h2>
+  <div id="background-animation-select"></div>
+  <button id="close-bg-btn">BACK</button>
+</div>
+
+<!-- Land Select Screen -->
+<div id="land-select-screen" class="hidden">
+  <h2>SELECT LAND COLOR</h2>
+  <div id="land-select-container"></div>
+  <button id="close-land-btn">BACK</button>
+</div>
+
+<!-- Session Select Screen -->
+<div id="session-select-screen" class="hidden">
+  <h2>SELECT SESSION</h2>
+  <button id="session1-btn">SESSION 1</button>
+  <button id="session2-btn" disabled>SESSION 2 🔒</button>
+  <button id="session3-btn" disabled>SESSION 3 🔒</button>
+  <button id="session4-btn" disabled>SESSION 4 🔒</button>
+  <button id="session5-btn" disabled>SESSION 5 🔒</button>
+  <button id="close-sessions-btn">BACK</button>
 </div>
 
 <!-- Level Select Screen -->
@@ -158,6 +238,8 @@
 <div id="game-over-screen" class="hidden">
   <h1 id="game-over-title">GAME OVER</h1>
   <div class="game-over-buttons">
+    <button id="revive-btn">📺 REVIVE</button>
+    <button id="skip-level-btn" class="hidden">⏭ SKIP LEVEL</button>
     <button id="home-btn">HOME</button>
     <button id="restart-btn">RESTART GAME</button>
   </div>
@@ -200,6 +282,7 @@
   </div>
 </div>
 
+<script src="sounds.js"></script>
 <script src="game.js"></script>
 <script>
   // Register Service Worker for Offline Support

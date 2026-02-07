@@ -1,30 +1,59 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 let gameState = 'START_SCREEN'; // Can be: START_SCREEN, PLAYING, GAME_OVER, GAME_WON
-let globalVolume = parseFloat(localStorage.getItem('dravexoVolume'));
-if (isNaN(globalVolume)) globalVolume = 0.5;
 
 let selectedCharacter = localStorage.getItem('dravexoSelectedCharacter') || 'cyan';
-let currentLevelIndex = 0;
-let musicVolume = parseFloat(localStorage.getItem('dravexoMusicVolume'));
-if (isNaN(musicVolume)) musicVolume = 0.5;
+let unlockedCharacters = JSON.parse(localStorage.getItem('dravexoUnlockedCharacters')) || ['cyan'];
+let currentLevelIndex = parseInt(localStorage.getItem('dravexoCurrentLevel')) || 0;
 
-let soundEnabled = localStorage.getItem('dravexoSoundEnabled') !== 'false';
 let touchEnabled = localStorage.getItem('dravexoTouchEnabled') !== 'false'; // Default to true
 let maxLevelReached = parseInt(localStorage.getItem('dravexoMaxLevel')) || 0;
 let initialEnemies = [];
+let consecutiveLosses = 0; // Track losses on the same level
 let initialCoins = [];
 let stars = [];
+let shakeDuration = 0;
+let shakeIntensity = 0;
+let floatingTexts = [];
+let timePlayed = 0; // For 10-min ad timer
+const TEN_MINUTES = 600000; // 10 minutes in milliseconds
+
+// --- Sprite / Image System ---
+const sprites = {};
+function loadSprite(key, src) {
+    const img = new Image();
+    img.src = src;
+    sprites[key] = img;
+}
+
+// Load Sprites (Apni photos assets folder mein daalein aur naam match karein)
+// Player Skins
+loadSprite('player_cyan', 'player_cyan.png');
+loadSprite('player_green', 'player_green.png');
+loadSprite('player_walker', 'player_walker.png');
+loadSprite('player_purple', 'player_purple.png');
+loadSprite('player_orange', 'player_orange.png');
+loadSprite('player_red', 'player_red.png');
+loadSprite('player_gold', 'player_gold.png');
+loadSprite('player_dark', 'player_dark.png');
+loadSprite('player_flyer', 'player_flyer.png');
+loadSprite('player_shooter', 'player_shooter.png');
+loadSprite('player_boss', 'player_boss.png');
+// Enemies
+loadSprite('enemy_patrol', 'enemy_patrol.png');
+loadSprite('enemy_fly', 'enemy_fly.png');
+loadSprite('enemy_shooter', 'enemy_shooter.png');
+loadSprite('enemy_boss', 'enemy_boss.png');
 
 // Game constants
 const GRAVITY = 0.5;
-const PLAYER_SPEED = 4;
-const JUMP_FORCE = -11;
+const BASE_SPEED = 4;
+const BASE_JUMP_FORCE = -11;
 const WALL_SLIDE_SPEED = 1;
 const GRAPPLE_MAX_RANGE = 300;
 const GRAPPLE_PULL_SPEED = -10; // Pulling up, so negative
-const DASH_SPEED = 12;
-const DASH_DURATION = 10; // in frames
+const BASE_DASH_SPEED = 12;
+const BASE_DASH_DURATION = 10; // in frames
 const DASH_COOLDOWN = 60; // in frames (1 second at 60fps)
 
 let camera = {
@@ -43,6 +72,9 @@ let player = {
   h: 30,
   dx: 0,
   dy: 0,
+  speed: 4, // Dynamic stats
+  jumpForce: -11,
+  dashDuration: 10,
   onGround: false,
   jumps: 0,
   maxJumps: 1, // Default to a single jump
@@ -57,21 +89,42 @@ let player = {
   hasShield: false,
   color: 'cyan', // Add color property for character selection
   invincible: false,
-  invincibleTimer: 0
+  invincibleTimer: 0,
+  gravityScale: 1, // For characters like Flyer
+  coyoteTimer: 0, // For better jump feel
+  jumpBuffer: 0   // For better jump feel
 };
 
 // Load saved settings from localStorage
 let score = 0;
 let highScore = localStorage.getItem('dravexoHighScore') || 0;
+let totalCoins = parseInt(localStorage.getItem('dravexoTotalCoins')) || 0;
 let selectedBackgroundAnimation = localStorage.getItem('dravexoBackgroundAnimation') || 'indianGradient'; // Default background
+let unlockedBackgrounds = JSON.parse(localStorage.getItem('dravexoUnlockedBackgrounds')) || ['indianGradient'];
+let selectedLandColor = localStorage.getItem('dravexoLandColor') || 'default';
+let unlockedLandColors = JSON.parse(localStorage.getItem('dravexoUnlockedLandColors')) || ['default'];
 
 // --- UI Elements ---
 const homeScreen = document.getElementById('home-screen');
 const startBtn = document.getElementById('start-btn');
 const newGameBtn = document.getElementById('new-game-btn');
 const characterBtn = document.getElementById('character-btn');
+const watchAdBtn = document.getElementById('watch-ad-btn');
+const session1Btn = document.getElementById('session1-btn');
 const session2Btn = document.getElementById('session2-btn');
+const session3Btn = document.getElementById('session3-btn');
+const session4Btn = document.getElementById('session4-btn');
+const session5Btn = document.getElementById('session5-btn');
+const sessionSelectScreen = document.getElementById('session-select-screen');
+const closeSessionsBtn = document.getElementById('close-sessions-btn');
 const highScoreDisplay = document.getElementById('ui-highscore');
+const totalCoinsDisplay = document.getElementById('total-coins-display');
+const dailyRewardBtn = document.getElementById('daily-reward-btn');
+const dailyRewardPopup = document.getElementById('daily-reward-popup');
+const claimRewardBtn = document.getElementById('claim-reward-btn');
+const closeRewardBtn = document.getElementById('close-reward-btn');
+const dailyRewardCloseX = document.getElementById('daily-reward-close-x');
+const dailyRewardMessage = document.getElementById('daily-reward-message');
 const gameUI = document.getElementById('game-ui');
 const hudScore = document.getElementById('hud-score');
 const hudLevel = document.getElementById('hud-level');
@@ -96,7 +149,6 @@ const saveControlsBtn = document.getElementById('save-controls-btn');
 const resetControlsBtn = document.getElementById('reset-controls-btn');
 const controlSizeSlider = document.getElementById('control-size-slider');
 const privacyBtn = document.getElementById('privacy-btn');
-const homePrivacyBtn = document.getElementById('home-privacy-btn'); // New button on Home Screen
 const loadingScreen = document.getElementById('loading-screen');
 const loadingBar = document.getElementById('loading-bar');
 const privacyScreen = document.getElementById('privacy-screen');
@@ -104,10 +156,18 @@ const closePrivacyBtn = document.getElementById('close-privacy-btn');
 const tutorialScreen = document.getElementById('tutorial-screen');
 const closeTutorialBtn = document.getElementById('close-tutorial'); // Add new UI elements for background animation selection
 const backgroundAnimationSelectContainer = document.getElementById('background-animation-select');
+const bgAnimBtn = document.getElementById('bg-anim-btn');
+const backgroundSelectScreen = document.getElementById('background-select-screen');
+const closeBgBtn = document.getElementById('close-bg-btn');
+const landBtn = document.getElementById('land-btn');
+const landSelectScreen = document.getElementById('land-select-screen');
+const landSelectContainer = document.getElementById('land-select-container');
+const closeLandBtn = document.getElementById('close-land-btn');
 const levelSelectScreen = document.getElementById('level-select-screen');
 const levelsContainer = document.getElementById('levels-container');
 const characterSelectScreen = document.getElementById('character-select-screen');
 const closeCharacterBtn = document.getElementById('close-character-btn');
+const randomCharBtn = document.getElementById('random-char-btn');
 const closeLevelsBtn = document.getElementById('close-levels-btn');
 const levelCompleteScreen = document.getElementById('level-complete-screen');
 const levelScoreDisplay = document.getElementById('level-score-display');
@@ -117,6 +177,8 @@ const gameOverScreen = document.getElementById('game-over-screen');
 const gameOverTitle = document.getElementById('game-over-title');
 const finalScoreDisplay = document.getElementById('final-score-display');
 const restartBtn = document.getElementById('restart-btn');
+const reviveBtn = document.getElementById('revive-btn'); // New Revive Button
+const skipLevelBtn = document.getElementById('skip-level-btn'); // New Skip Button
 const homeBtn = document.getElementById('home-btn');
 const pauseBtn = document.getElementById('pause-btn');
 const pauseMenu = document.getElementById('pause-menu');
@@ -126,17 +188,38 @@ const pauseHomeBtn = document.getElementById('pause-home-btn');
 let isEditingControls = false;
 let selectedEditButton = null; // Track which button is being resized
 
+// --- Custom Popup Elements ---
+const messagePopup = document.getElementById('message-popup');
+const messageTitle = document.getElementById('message-title');
+const messageText = document.getElementById('message-text');
+const messageOkBtn = document.getElementById('message-ok-btn');
+const confirmPopup = document.getElementById('confirm-popup');
+const confirmTitle = document.getElementById('confirm-title');
+const confirmText = document.getElementById('confirm-text');
+const confirmYesBtn = document.getElementById('confirm-yes-btn');
+const confirmNoBtn = document.getElementById('confirm-no-btn');
+let confirmCallback = null;
+
 // --- Resolution & Scaling Logic ---
 let scaleFactor = 1;
 function resizeGame() {
-    // Optimize: Set a fixed internal resolution for better performance (Smoothness)
-    const targetHeight = 540; 
-    const aspectRatio = window.innerWidth / window.innerHeight;
-    canvas.height = targetHeight;
-    canvas.width = targetHeight * aspectRatio;
+    // Use Device Pixel Ratio for HD/Sharp Images
+    // Cap at 1.5 to prevent lag on high-res mobile screens (Performance Fix)
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.0); // Reduced to 1.0 for 60FPS smoothness
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
     
+    // --- ZOOM FIX FOR MOBILE ---
     // Calculate scale to fit height (Base height is 400)
-    scaleFactor = canvas.height / 400;
+    let scale = canvas.height / 400;
+
+    // If width is too narrow (Portrait Mode), scale based on width instead
+    // This prevents the game from being extremely zoomed in
+    if (canvas.width / scale < 600) {
+        scale = canvas.width / 600;
+    }
+    
+    scaleFactor = scale;
     
     // Update camera logical size
     camera.width = canvas.width / scaleFactor;
@@ -151,6 +234,26 @@ function playSound(sound) {
     if (soundEnabled) {
         sound.play();
     }
+}
+
+function updateCurrencyDisplay() {
+    if (totalCoinsDisplay) {
+        totalCoinsDisplay.innerText = totalCoins;
+        // Trigger Animation
+        totalCoinsDisplay.classList.remove('currency-pop');
+        void totalCoinsDisplay.offsetWidth; // Force reflow to restart animation
+        totalCoinsDisplay.classList.add('currency-pop');
+    }
+}
+
+// --- Juice Functions (Screen Shake & Floating Text) ---
+function startShake(duration, intensity) {
+    shakeDuration = duration;
+    shakeIntensity = intensity;
+}
+
+function spawnFloatingText(x, y, text, color='white') {
+    floatingTexts.push({x, y, text, color, life: 50, yOffset: 0});
 }
 
 // --- Loading Screen Logic ---
@@ -170,20 +273,65 @@ window.addEventListener('load', () => {
     }, 20); // Update every 20ms
 });
 
+function updateSessionButtons() {
+    if (session2Btn) {
+        if (maxLevelReached >= 25) {
+            session2Btn.disabled = false;
+            session2Btn.innerText = "SESSION 2";
+        } else {
+            session2Btn.disabled = true;
+            session2Btn.innerText = "SESSION 2 🔒";
+        }
+    }
+    if (session3Btn) {
+        if (maxLevelReached >= 50) {
+            session3Btn.disabled = false;
+            session3Btn.innerText = "SESSION 3";
+        } else {
+            session3Btn.disabled = true;
+            session3Btn.innerText = "SESSION 3 🔒";
+        }
+    }
+    if (session4Btn) {
+        if (maxLevelReached >= 75) {
+            session4Btn.disabled = false;
+            session4Btn.innerText = "SESSION 4";
+        } else {
+            session4Btn.disabled = true;
+            session4Btn.innerText = "SESSION 4 🔒";
+        }
+    }
+    if (session5Btn) {
+        if (maxLevelReached >= 100) {
+            session5Btn.disabled = false;
+            session5Btn.innerText = "SESSION 5";
+        } else {
+            session5Btn.disabled = true;
+            session5Btn.innerText = "SESSION 5 🔒";
+        }
+    }
+}
+
 function showHomeScreen() {
     homeScreen.classList.remove('hidden');
     gameOverScreen.classList.add('hidden'); // Ensure game over screen is hidden
     settingsMenu.classList.add('hidden'); // Ensure settings hidden
+    sessionSelectScreen.classList.add('hidden');
     tutorialScreen.classList.add('hidden');
+    consecutiveLosses = 0; // Reset losses on home screen
     levelSelectScreen.classList.add('hidden');
     characterSelectScreen.classList.add('hidden');
     levelCompleteScreen.classList.add('hidden');
     gameUI.classList.add('hidden'); // Hide HUD on home screen
     pauseBtn.classList.add('hidden'); // Hide pause button on home screen
+    timePlayed = 0; // Reset ad timer
     if (touchControls) touchControls.classList.add('hidden');
     if (highScoreDisplay) highScoreDisplay.innerText = highScore;
-    backgroundMusic.resume(); // Ensure music plays on the home screen
+    updateSessionButtons(); // Update session locks
+    backgroundMusic.stop(); // Stop game music
+    homeMusic.play();       // Play home music
     canvas.style.display = 'none'; // Hide canvas so home screen appears separately
+    updateCurrencyDisplay();
 }
 
 function hideHomeScreen() {
@@ -204,9 +352,21 @@ function showGameOverMenu(win) {
     if (win) {
         gameOverTitle.innerText = "YOU WIN!";
         gameOverTitle.style.color = "gold";
+        if (reviveBtn) reviveBtn.classList.add('hidden'); // Hide revive on win
+        if (skipLevelBtn) skipLevelBtn.classList.add('hidden'); // Hide skip on win
     } else {
         gameOverTitle.innerText = "GAME OVER";
         gameOverTitle.style.color = "#e74c3c";
+        if (reviveBtn) reviveBtn.classList.remove('hidden');
+        
+        // Show Skip Button if lost 3 or more times
+        if (skipLevelBtn) {
+            if (consecutiveLosses >= 3) {
+                skipLevelBtn.classList.remove('hidden');
+            } else {
+                skipLevelBtn.classList.add('hidden');
+            }
+        }
     }
 }
 
@@ -246,7 +406,7 @@ if (touchToggle) {
 }
 
 // --- Graphics Toggle Logic ---
-let graphicsMode = localStorage.getItem('dravexoGraphics') || 'pixelated';
+let graphicsMode = localStorage.getItem('dravexoGraphics') || 'auto'; // Default to Smooth for Photos
 
 function applyGraphics() {
     if (graphicsMode === 'pixelated') {
@@ -273,8 +433,6 @@ if (volumeSlider) {
     volumeSlider.addEventListener('input', (e) => {
         globalVolume = parseFloat(e.target.value);
         localStorage.setItem('dravexoVolume', globalVolume);
-        // Update background music immediately
-        backgroundMusic.setVolume(globalVolume);
     });
 }
 
@@ -285,6 +443,7 @@ if (musicVolumeSlider) {
         musicVolume = parseFloat(e.target.value);
         localStorage.setItem('dravexoMusicVolume', musicVolume);
         backgroundMusic.setVolume(musicVolume);
+        homeMusic.setVolume(musicVolume); // Slider controls both
     });
 }
 
@@ -498,15 +657,6 @@ if (privacyBtn) {
     });
 }
 
-// --- Home Screen Privacy Button ---
-if (homePrivacyBtn) {
-    homePrivacyBtn.addEventListener('click', () => {
-        playSound(uiClickSound);
-        // Show privacy screen directly
-        privacyScreen.classList.remove('hidden');
-    });
-}
-
 if (closePrivacyBtn) {
     closePrivacyBtn.addEventListener('click', () => {
         playSound(uiClickSound);
@@ -531,6 +681,19 @@ if (resetProgressBtn) {
                 session2Btn.disabled = true;
                 session2Btn.innerText = "SESSION 2 🔒";
             }
+            if (session3Btn) {
+                session3Btn.disabled = true;
+                session3Btn.innerText = "SESSION 3 🔒";
+            }
+            if (session4Btn) {
+                session4Btn.disabled = true;
+                session4Btn.innerText = "SESSION 4 🔒";
+            }
+            if (session5Btn) {
+                session5Btn.disabled = true;
+                session5Btn.innerText = "SESSION 5 🔒";
+            }
+            updateSessionButtons();
 
             populateLevelSelect(); // Refresh the buttons to show locks
             playSound(uiClickSound);
@@ -542,18 +705,71 @@ if (resetProgressBtn) {
 let currentSessionStart = 0;
 let currentSessionEnd = 20;
 
+if (session1Btn) {
+    session1Btn.addEventListener('click', () => {
+        playSound(uiClickSound);
+        currentSessionStart = 0;
+        currentSessionEnd = 25;
+        document.querySelector('#level-select-screen h2').innerText = "SESSION 1";
+        populateLevelSelect();
+        sessionSelectScreen.classList.add('hidden');
+        levelSelectScreen.classList.remove('hidden');
+    });
+}
+
 session2Btn.addEventListener('click', () => {
     playSound(uiClickSound);
-    currentSessionStart = 20;
-    currentSessionEnd = 40;
+    currentSessionStart = 25;
+    currentSessionEnd = 50;
     document.querySelector('#level-select-screen h2').innerText = "SESSION 2";
     populateLevelSelect();
+    sessionSelectScreen.classList.add('hidden');
     levelSelectScreen.classList.remove('hidden');
 });
+
+if (session3Btn) {
+    session3Btn.addEventListener('click', () => {
+        playSound(uiClickSound);
+        currentSessionStart = 50;
+        currentSessionEnd = 75;
+        document.querySelector('#level-select-screen h2').innerText = "SESSION 3";
+        populateLevelSelect();
+        sessionSelectScreen.classList.add('hidden');
+        levelSelectScreen.classList.remove('hidden');
+    });
+}
+if (session4Btn) {
+    session4Btn.addEventListener('click', () => {
+        playSound(uiClickSound);
+        currentSessionStart = 75;
+        currentSessionEnd = 100;
+        document.querySelector('#level-select-screen h2').innerText = "SESSION 4";
+        populateLevelSelect();
+        sessionSelectScreen.classList.add('hidden');
+        levelSelectScreen.classList.remove('hidden');
+    });
+}
+if (session5Btn) {
+    session5Btn.addEventListener('click', () => {
+        playSound(uiClickSound);
+        currentSessionStart = 100;
+        currentSessionEnd = 125;
+        document.querySelector('#level-select-screen h2').innerText = "SESSION 5";
+        populateLevelSelect();
+        sessionSelectScreen.classList.add('hidden');
+        levelSelectScreen.classList.remove('hidden');
+    });
+}
 
 closeLevelsBtn.addEventListener('click', () => {
     playSound(uiClickSound);
     levelSelectScreen.classList.add('hidden');
+    sessionSelectScreen.classList.remove('hidden'); // Go back to session select
+});
+
+closeSessionsBtn.addEventListener('click', () => {
+    playSound(uiClickSound);
+    sessionSelectScreen.classList.add('hidden');
     homeScreen.classList.remove('hidden');
 });
 
@@ -573,14 +789,11 @@ function populateLevelSelect() {
             btn.addEventListener('click', () => {
                 playSound(uiClickSound);
                 // Force landscape mode on mobile
-                if (screen.orientation && screen.orientation.lock) {
-                    if (document.documentElement.requestFullscreen) {
-                        document.documentElement.requestFullscreen().catch(() => {});
-                    }
-                    screen.orientation.lock('landscape').catch(() => {});
-                }
+                forceLandscape();
+                homeMusic.stop(); // Stop home music when level starts
                 currentLevelIndex = index;
                 score = 0; // Reset score for new run
+                consecutiveLosses = 0; // Reset losses
                 gameState = 'PLAYING';
                 hideHomeScreen();
                 levelSelectScreen.classList.add('hidden');
@@ -592,97 +805,505 @@ function populateLevelSelect() {
     });
 }
 
+// --- Custom Popup Logic ---
+function showMessage(title, text) {
+    if(messagePopup) {
+        messageTitle.innerText = title;
+        messageText.innerText = text;
+        messagePopup.classList.remove('hidden');
+    } else {
+        alert(text);
+    }
+}
+
+function showConfirm(title, text, onYes) {
+    if(confirmPopup) {
+        confirmTitle.innerText = title;
+        confirmText.innerText = text;
+        confirmCallback = onYes;
+        confirmPopup.classList.remove('hidden');
+    } else {
+        if(confirm(text)) {
+            onYes();
+        }
+    }
+}
+
+if(messageOkBtn) {
+    messageOkBtn.addEventListener('click', () => {
+        playSound(uiClickSound);
+        messagePopup.classList.add('hidden');
+    });
+}
+
+if(confirmYesBtn) {
+    confirmYesBtn.addEventListener('click', () => {
+        playSound(uiClickSound);
+        confirmPopup.classList.add('hidden');
+        if(confirmCallback) confirmCallback();
+        confirmCallback = null;
+    });
+}
+
+if(confirmNoBtn) {
+    confirmNoBtn.addEventListener('click', () => {
+        playSound(uiClickSound);
+        confirmPopup.classList.add('hidden');
+        confirmCallback = null;
+    });
+}
+
 // --- Background Animation Data & Selection ---
 const backgroundAnimations = {
-    'indianGradient': { name: 'Indian Gradient' },
-    'starfield': { name: 'Starfield' },
-    'none': { name: 'Dynamic Colors' }
+    'indianGradient': { name: 'India', price: 0 },
+    'starfield': { name: 'Space', price: 500 },
+    'retroGrid': { name: 'Retro', price: 1000 },
+    'matrix': { name: 'Matrix', price: 1500 },
+    'fire': { name: 'Inferno', price: 2000 },
+    'snow': { name: 'Blizzard', price: 2500 },
+    'rain': { name: 'Storm', price: 3000 },
+    'underwater': { name: 'Ocean', price: 3500 },
+    'cyberpunk': { name: 'Neon', price: 4000 },
+    'forest': { name: 'Forest', price: 5000 }
 };
 
 function populateBackgroundAnimationSelect() {
     const container = document.getElementById('background-animation-select');
     container.innerHTML = ''; // Clear existing options
 
+    const grid = document.createElement('div');
+    grid.className = 'bg-options-grid';
+
     for (const animKey in backgroundAnimations) {
         const anim = backgroundAnimations[animKey];
 
-        const label = document.createElement('label');
-        label.className = 'background-option-label';
+        const card = document.createElement('div');
+        card.className = 'bg-option';
+        
+        const isUnlocked = unlockedBackgrounds.includes(animKey);
+        const isSelected = animKey === selectedBackgroundAnimation;
 
-        const input = document.createElement('input');
-        input.type = 'radio';
-        input.name = 'background-animation';
-        input.value = animKey;
-        input.checked = (animKey === selectedBackgroundAnimation);
+        if (isSelected) card.classList.add('selected');
+        if (!isUnlocked) card.classList.add('locked');
 
-        input.addEventListener('change', (event) => {
-            playSound(uiClickSound);
-            selectedBackgroundAnimation = event.target.value;
-            localStorage.setItem('dravexoBackgroundAnimation', selectedBackgroundAnimation);
-            updateBackgroundCache(); // Refresh cache on change
-        });
+        // Preview Canvas
+        const canvas = document.createElement('canvas');
+        canvas.className = 'bg-preview';
+        canvas.width = 140;
+        canvas.height = 100;
+        
+        // Draw static preview
+        const ctxPreview = canvas.getContext('2d');
+        drawBackgroundPreview(ctxPreview, animKey, 140, 100);
 
-        const span = document.createElement('span');
-        span.textContent = anim.name;
+        // HTML Structure
+        card.innerHTML = `
+            <div class="bg-name">${anim.name}</div>
+            ${isUnlocked 
+                ? (isSelected ? '<div style="color:#2ecc71;font-size:12px;margin-top:auto;">SELECTED</div>' : '<div style="color:#aaa;font-size:12px;margin-top:auto;">OWNED</div>')
+                : `<button class="buy-bg-btn">💰 ${anim.price}</button>`
+            }
+        `;
+        
+        // Insert canvas at the top
+        card.insertBefore(canvas, card.firstChild);
 
-        label.appendChild(input);
-        label.appendChild(span);
-        container.appendChild(label);
+        card.onclick = (e) => {
+            if (isUnlocked) {
+                playSound(uiClickSound);
+                selectedBackgroundAnimation = animKey;
+                localStorage.setItem('dravexoBackgroundAnimation', selectedBackgroundAnimation);
+                updateBackgroundCache(); // Refresh cache on change
+                populateBackgroundAnimationSelect(); // Refresh UI to show selection
+            } else {
+                // Buy Logic
+                // Fix: Use closest to handle clicks on text/icons inside button
+                if (e.target.closest('.buy-bg-btn')) {
+                    if (totalCoins >= anim.price) {
+                        showConfirm("UNLOCK BACKGROUND", `Buy ${anim.name} for ${anim.price} Coins?`, () => {
+                            playSound(coinSound);
+                            totalCoins -= anim.price;
+                            unlockedBackgrounds.push(animKey);
+                            
+                            // Save Data
+                            localStorage.setItem('dravexoTotalCoins', totalCoins);
+                            localStorage.setItem('dravexoUnlockedBackgrounds', JSON.stringify(unlockedBackgrounds));
+                            
+                            // Auto-select
+                            selectedBackgroundAnimation = animKey;
+                            localStorage.setItem('dravexoBackgroundAnimation', selectedBackgroundAnimation);
+                            updateBackgroundCache();
+                            
+                            updateCurrencyDisplay();
+                            populateBackgroundAnimationSelect();
+                            showMessage("SUCCESS", `${anim.name} Unlocked!`);
+                        });
+                    } else {
+                        showMessage("LOCKED", "Not enough coins!");
+                    }
+                }
+            }
+        };
+
+        grid.appendChild(card);
     }
+    container.appendChild(grid);
+}
+
+// Helper to draw previews in the settings menu
+function drawBackgroundPreview(ctx, type, w, h) {
+    ctx.save();
+    // Fill background
+    ctx.fillStyle = "#111";
+    ctx.fillRect(0, 0, w, h);
+    
+    if (type === 'indianGradient') {
+        const g = ctx.createLinearGradient(0, 0, 0, h);
+        g.addColorStop(0, '#ff9933'); g.addColorStop(0.5, '#ffffff'); g.addColorStop(1, '#138808');
+        ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = 'navy'; ctx.beginPath(); ctx.arc(w/2, h/2, 10, 0, Math.PI*2); ctx.stroke();
+    } else if (type === 'starfield') {
+        ctx.fillStyle = "white";
+        for(let i=0; i<20; i++) ctx.fillRect(Math.random()*w, Math.random()*h, 1, 1);
+    } else if (type === 'retroGrid') {
+        ctx.fillStyle = "#2c003e"; ctx.fillRect(0,0,w,h);
+        ctx.strokeStyle = "magenta"; ctx.beginPath();
+        ctx.moveTo(0, h*0.8); ctx.lineTo(w, h*0.8);
+        ctx.moveTo(w/2, h/2); ctx.lineTo(0, h);
+        ctx.moveTo(w/2, h/2); ctx.lineTo(w, h);
+        ctx.stroke();
+    } else if (type === 'matrix') {
+        ctx.fillStyle = "black"; ctx.fillRect(0,0,w,h);
+        ctx.fillStyle = "#0f0"; ctx.font = "10px monospace";
+        ctx.fillText("1 0 1", 10, 20); ctx.fillText("0 1 0", 50, 40);
+    } else if (type === 'fire') {
+        const g = ctx.createLinearGradient(0, h, 0, 0);
+        g.addColorStop(0, "red"); g.addColorStop(1, "yellow");
+        ctx.fillStyle = g; ctx.fillRect(0, h/2, w, h/2);
+    } else if (type === 'snow') {
+        ctx.fillStyle = "#34495e"; ctx.fillRect(0,0,w,h);
+        ctx.fillStyle = "white";
+        for(let i=0; i<10; i++) ctx.beginPath(), ctx.arc(Math.random()*w, Math.random()*h, 2, 0, Math.PI*2), ctx.fill();
+    } else if (type === 'rain') {
+        ctx.fillStyle = "#001"; ctx.fillRect(0,0,w,h);
+        ctx.strokeStyle = "cyan"; ctx.beginPath();
+        for(let i=0; i<10; i++) { let x = Math.random()*w; ctx.moveTo(x, 0); ctx.lineTo(x-5, 10); }
+        ctx.stroke();
+    } else if (type === 'underwater') {
+        ctx.fillStyle = "#004466"; ctx.fillRect(0,0,w,h);
+        ctx.strokeStyle = "rgba(255,255,255,0.3)"; ctx.beginPath(); ctx.arc(w/2, h/2, 5, 0, Math.PI*2); ctx.stroke();
+    } else if (type === 'cyberpunk') {
+        ctx.fillStyle = "#050510"; ctx.fillRect(0,0,w,h);
+        ctx.fillStyle = "cyan"; ctx.fillRect(10, 10, 20, 40);
+        ctx.fillStyle = "magenta"; ctx.fillRect(40, 20, 30, 10);
+    } else if (type === 'forest') {
+        ctx.fillStyle = "#052e16"; ctx.fillRect(0,0,w,h);
+        ctx.fillStyle = "#14532d"; ctx.beginPath(); ctx.moveTo(10, h); ctx.lineTo(20, h-20); ctx.lineTo(30, h); ctx.fill();
+    }
+    ctx.restore();
+}
+
+// --- Land Color Data & Selection ---
+const landColors = {
+    'default': { name: 'Default (Dynamic)', color: 'lime', price: 0 },
+    'grass': { name: 'Grass Green', color: '#2ecc71', price: 100 },
+    'dirt': { name: 'Dirt Brown', color: '#8B4513', price: 200 },
+    'stone': { name: 'Stone Grey', color: '#7f8c8d', price: 300 },
+    'sand': { name: 'Desert Sand', color: '#f1c40f', price: 400 },
+    'snow': { name: 'Snow White', color: '#ecf0f1', price: 500 },
+    'lava': { name: 'Magma Red', color: '#c0392b', price: 600 },
+    'water': { name: 'Ocean Blue', color: '#3498db', price: 700 },
+    'midnight': { name: 'Midnight', color: '#2c3e50', price: 800 },
+    'void': { name: 'Void Black', color: '#000000', price: 900 },
+    'gold': { name: 'Pure Gold', color: '#ffd700', price: 1000 },
+    'silver': { name: 'Silver', color: '#bdc3c7', price: 1100 },
+    'pink': { name: 'Bubblegum', color: '#ff69b4', price: 1200 },
+    'toxic': { name: 'Toxic Slime', color: '#7fff00', price: 1300 },
+    'purple': { name: 'Royal Purple', color: '#8e44ad', price: 1400 },
+    'orange': { name: 'Sunset Orange', color: '#e67e22', price: 1500 },
+    'teal': { name: 'Teal', color: '#16a085', price: 1600 },
+    'maroon': { name: 'Maroon', color: '#800000', price: 1700 },
+    'olive': { name: 'Olive', color: '#808000', price: 1800 },
+    'navy': { name: 'Navy Blue', color: '#000080', price: 1900 },
+    'chocolate': { name: 'Chocolate', color: '#d2691e', price: 2000 },
+    'mint': { name: 'Mint Green', color: '#98ff98', price: 2100 },
+    'crimson': { name: 'Crimson', color: '#dc143c', price: 2200 },
+    'steel': { name: 'Steel Blue', color: '#4682b4', price: 2300 }
+};
+
+function populateLandSelect() {
+    landSelectContainer.innerHTML = '';
+    const grid = document.createElement('div');
+    grid.className = 'bg-options-grid'; // Reuse existing grid class
+
+    for (const key in landColors) {
+        const land = landColors[key];
+        const card = document.createElement('div');
+        card.className = 'bg-option'; // Reuse existing card class
+
+        const isUnlocked = unlockedLandColors.includes(key);
+        const isSelected = key === selectedLandColor;
+
+        if (isSelected) card.classList.add('selected');
+        if (!isUnlocked) card.classList.add('locked');
+
+        // Preview Canvas
+        const canvas = document.createElement('canvas');
+        canvas.className = 'bg-preview';
+        canvas.width = 140;
+        canvas.height = 100;
+        const ctxPreview = canvas.getContext('2d');
+        
+        // Draw Preview Block
+        ctxPreview.fillStyle = "#222";
+        ctxPreview.fillRect(0, 0, 140, 100);
+        // Draw a 3D block in center
+        const colorToDraw = (key === 'default') ? 'lime' : land.color;
+        draw3DBlockPreview(ctxPreview, 30, 30, 80, 40, colorToDraw);
+
+        card.innerHTML = `
+            <div class="bg-name">${land.name}</div>
+            ${isUnlocked 
+                ? (isSelected ? '<div style="color:#2ecc71;font-size:12px;margin-top:auto;">SELECTED</div>' : '<div style="color:#aaa;font-size:12px;margin-top:auto;">OWNED</div>')
+                : `<button class="buy-bg-btn">💰 ${land.price}</button>`
+            }
+        `;
+        card.insertBefore(canvas, card.firstChild);
+
+        card.onclick = (e) => {
+            if (isUnlocked) {
+                playSound(uiClickSound);
+                selectedLandColor = key;
+                localStorage.setItem('dravexoLandColor', selectedLandColor);
+                populateLandSelect();
+            } else {
+                if (e.target.closest('.buy-bg-btn')) {
+                    if (totalCoins >= land.price) {
+                        showConfirm("UNLOCK LAND", `Buy ${land.name} for ${land.price} Coins?`, () => {
+                            playSound(coinSound);
+                            totalCoins -= land.price;
+                            unlockedLandColors.push(key);
+                            localStorage.setItem('dravexoTotalCoins', totalCoins);
+                            localStorage.setItem('dravexoUnlockedLandColors', JSON.stringify(unlockedLandColors));
+                            selectedLandColor = key;
+                            localStorage.setItem('dravexoLandColor', selectedLandColor);
+                            updateCurrencyDisplay();
+                            populateLandSelect();
+                            showMessage("SUCCESS", `${land.name} Unlocked!`);
+                        });
+                    } else {
+                        showMessage("LOCKED", "Not enough coins!");
+                    }
+                }
+            }
+        };
+        grid.appendChild(card);
+    }
+    landSelectContainer.appendChild(grid);
+}
+
+// Helper for Land Preview
+function draw3DBlockPreview(ctx, x, y, w, h, color) {
+    const depth = 10;
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = "rgba(0,0,0,0.2)"; // Side
+    ctx.beginPath(); ctx.moveTo(x+w, y); ctx.lineTo(x+w+depth, y-depth); ctx.lineTo(x+w+depth, y+h-depth); ctx.lineTo(x+w, y+h); ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.3)"; // Top
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x+depth, y-depth); ctx.lineTo(x+w+depth, y-depth); ctx.lineTo(x+w, y); ctx.fill();
 }
 
 // --- Character Data & Selection ---
 const characters = {
-    'cyan': { name: 'Pixel Bot', color: 'cyan' },
-    'green': { name: 'Slime', color: '#2ecc71' },
-    'purple': { name: 'Void', color: '#9b59b6' },
-    'orange': { name: 'Inferno', color: '#e67e22' },
-    'red': { name: 'Crimson', color: '#e74c3c' },
-    'gold': { name: 'Midas', color: '#f1c40f' },
-    'dark': { name: 'Ninja', color: '#2c3e50' }
+    'cyan': { name: 'Pixel Bot', color: 'cyan', price: 0, ability: 'Balanced' },
+    'green': { name: 'Slime', color: '#2ecc71', price: 500, ability: 'Super Jump' },
+    'purple': { name: 'Void', color: '#9b59b6', price: 1000, ability: 'Long Dash' },
+    'orange': { name: 'Inferno', color: '#e67e22', price: 2000, ability: 'Super Speed' },
+    'red': { name: 'Crimson', color: '#e74c3c', price: 3500, ability: 'Start w/ Shield' },
+    'gold': { name: 'Midas', color: '#f1c40f', price: 5000, ability: 'Double Coins' },
+    'dark': { name: 'Ninja', color: '#2c3e50', price: 8000, ability: 'Triple Jump' },
+    'walker': { name: 'Red Walker', color: '#c0392b', price: 3000, ability: 'Fast & Agile' },
+    'flyer': { name: 'Purple Flyer', color: '#8e44ad', price: 4500, ability: 'Moon Gravity' },
+    'shooter': { name: 'Mecha Turret', color: '#34495e', price: 6000, ability: 'Start w/ Shield' },
+    'boss': { name: 'The Boss', color: '#8e44ad', price: 15000, ability: 'Giant Size' }
 };
+
+// Helper function to draw character previews on UI Canvas
+function drawCharacterPreview(ctx, charKey, color) {
+    // Clear canvas
+    ctx.clearRect(0, 0, 100, 100);
+    
+    // Scale and center
+    ctx.save();
+    ctx.translate(50, 50); // Center of 100x100
+    ctx.scale(2.0, 2.0); // Double size for better visibility
+    ctx.translate(-15, -15); // Offset to center the 30x30 character
+
+    if (charKey === 'walker') {
+        // Walker Skin
+        ctx.fillStyle = "#922b21"; 
+        ctx.fillRect(5, 25, 8, 12); // Leg
+        ctx.fillRect(17, 25, 8, 12); // Leg
+        ctx.fillStyle = "#c0392b";
+        ctx.fillRect(0, 0, 30, 30); // Body
+        ctx.fillStyle = "white";
+        ctx.fillRect(4, 6, 8, 8); ctx.fillRect(18, 6, 8, 8); // Eyes
+        ctx.fillStyle = "black";
+        ctx.fillRect(6, 8, 4, 4); ctx.fillRect(20, 8, 4, 4); // Pupils
+        // Eyebrows
+        ctx.beginPath(); ctx.moveTo(2, 4); ctx.lineTo(12, 8); ctx.lineTo(12, 2); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(28, 4); ctx.lineTo(18, 8); ctx.lineTo(18, 2); ctx.fill();
+
+    } else if (charKey === 'flyer') {
+        // Flyer Skin
+        ctx.fillStyle = "#6c3483"; 
+        ctx.fillRect(8, 25, 4, 10); ctx.fillRect(18, 25, 4, 10); // Legs
+        ctx.fillStyle = "#8e44ad";
+        ctx.fillRect(0, 0, 30, 30); // Body
+        // Wings
+        ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+        ctx.beginPath(); ctx.moveTo(0, 10); ctx.lineTo(-12, -5); ctx.lineTo(0, 5); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(30, 10); ctx.lineTo(42, -5); ctx.lineTo(30, 5); ctx.fill();
+        // Eye
+        ctx.fillStyle = "#f1c40f";
+        ctx.fillRect(10, 8, 10, 8);
+
+    } else if (charKey === 'shooter') {
+        // Shooter Skin
+        ctx.fillStyle = "#2c3e50";
+        ctx.beginPath(); ctx.moveTo(5, 25); ctx.lineTo(-8, 40); ctx.lineTo(5, 30); ctx.fill(); // Leg
+        ctx.beginPath(); ctx.moveTo(25, 25); ctx.lineTo(38, 40); ctx.lineTo(25, 30); ctx.fill(); // Leg
+        ctx.fillStyle = "#34495e";
+        ctx.fillRect(0, 0, 30, 30); // Body
+        ctx.fillStyle = "black";
+        ctx.fillRect(30, 8, 8, 8); // Barrel
+        ctx.fillStyle = "red";
+        ctx.fillRect(11, 4, 8, 4); // Sensor
+
+    } else if (charKey === 'boss') {
+        // Boss Skin
+        ctx.fillStyle = "#8e44ad";
+        ctx.fillRect(-5, -5, 40, 40); // Big Body
+        ctx.fillStyle = "white";
+        ctx.fillRect(5, 5, 10, 10); ctx.fillRect(25, 5, 10, 10); // Eyes
+        ctx.fillStyle = "red";
+        ctx.fillRect(7, 7, 6, 6); ctx.fillRect(27, 7, 6, 6); // Pupils
+
+    } else {
+        // Default Robot (Pixel Bot)
+        // Back Limbs
+        ctx.fillStyle = "#2c3e50";
+        ctx.fillRect(-3, 10, 6, 15); // Arm
+        ctx.fillRect(6, 24, 12, 6); // Foot
+        // Body
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 12, 30, 18);
+        ctx.fillStyle = "rgba(255,255,255,0.3)";
+        ctx.fillRect(4, 16, 22, 10); // Chest
+        // Head
+        ctx.fillStyle = "#bdc3c7";
+        ctx.fillRect(3, 0, 24, 15);
+        // Eyes
+        ctx.fillStyle = "black";
+        ctx.fillRect(8, 6, 4, 4); ctx.fillRect(18, 6, 4, 4);
+        // Front Limbs
+        ctx.fillStyle = "#34495e";
+        ctx.fillRect(12, 10, 6, 15); // Arm
+        ctx.fillRect(21, 24, 12, 6); // Foot
+    }
+    ctx.restore();
+}
 
 function populateCharacterSelect() {
     const container = document.getElementById('character-list');
     container.innerHTML = ''; // Clear existing options to prevent duplicates
-    const optionsContainer = document.createElement('div');
-    optionsContainer.className = 'character-options';
-    optionsContainer.style.justifyContent = 'center'; // Center them in the new screen
 
-    for (const charKey in characters) {
-        const option = document.createElement('div');
-        option.className = 'character-option';
-        option.style.backgroundColor = characters[charKey].color;
-        option.dataset.char = charKey;
-        option.innerText = characters[charKey].name.charAt(0); // Show first letter (e.g., 'N' for Ninja)
+    // Define Groups
+    const heroKeys = ['cyan', 'green', 'purple', 'orange', 'red', 'gold', 'dark'];
+    const villainKeys = ['walker', 'flyer', 'shooter', 'boss'];
 
-        option.addEventListener('click', () => {
-            // Save selection to localStorage
-            selectedCharacter = option.dataset.char;
-            localStorage.setItem('dravexoSelectedCharacter', selectedCharacter);
+    const createGroup = (title, keys) => {
+        // Create Header
+        const header = document.createElement('h3');
+        header.className = 'char-section-title';
+        header.innerText = title;
+        container.appendChild(header);
 
-            // Visual feedback
-            document.querySelectorAll('.character-option').forEach(opt => opt.style.borderColor = '#555');
-            option.style.borderColor = 'white';
-            
-            // Play special sounds for specific characters
-            if (charKey === 'gold') {
-                playSound(coinSound); // Midas makes a coin sound
-            } else if (charKey === 'dark') {
-                playSound(dashSound); // Ninja makes a dash sound
-            } else {
-                playSound(uiClickSound);
-            }
-        });
+        // Create Options Container
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'character-options';
         
-        // Highlight currently selected
-        if (charKey === selectedCharacter) {
-            option.style.borderColor = 'white';
-        }
+        keys.forEach(charKey => {
+            if (!characters[charKey]) return;
+            const charData = characters[charKey];
+            const option = document.createElement('div');
+            option.className = 'character-option';
+            const isUnlocked = unlockedCharacters.includes(charKey);
+            const isSelected = charKey === selectedCharacter;
 
-        optionsContainer.appendChild(option);
-    }
-    container.appendChild(optionsContainer);
+            if (isSelected) option.classList.add('selected');
+            if (!isUnlocked) option.classList.add('locked');
+
+            option.dataset.char = charKey;
+            
+            // HTML Structure for Card
+            option.innerHTML = `
+                <canvas class="char-preview" width="100" height="100"></canvas>
+                <div class="char-name">${charData.name}</div>
+                <div class="char-ability">${charData.ability}</div>
+                ${isUnlocked 
+                    ? (isSelected ? '<div style="color:#2ecc71;font-size:12px;">SELECTED</div>' : '<div style="color:#aaa;font-size:12px;">OWNED</div>')
+                    : `<button class="buy-char-btn">💰 ${charData.price}</button>`
+                }
+            `;
+
+            // Draw the character preview
+            const ctx = option.querySelector('canvas').getContext('2d');
+            drawCharacterPreview(ctx, charKey, charData.color);
+
+            // Click Handler
+            option.onclick = (e) => {
+                if (isUnlocked) {
+                    // Select Character
+                    playSound(uiClickSound);
+                    selectedCharacter = charKey;
+                    localStorage.setItem('dravexoSelectedCharacter', selectedCharacter);
+                    populateCharacterSelect(); // Refresh UI
+                } else {
+                    // Buy Character
+                    if (e.target.closest('.buy-char-btn')) {
+                        if (totalCoins >= charData.price) {
+                            showConfirm("UNLOCK HERO", `Buy ${charData.name} for ${charData.price} Coins?`, () => {
+                                playSound(coinSound);
+                                totalCoins -= charData.price;
+                                unlockedCharacters.push(charKey);
+                                
+                                // Save Data
+                                localStorage.setItem('dravexoTotalCoins', totalCoins);
+                                localStorage.setItem('dravexoUnlockedCharacters', JSON.stringify(unlockedCharacters));
+                                
+                                // Auto-select and refresh
+                                selectedCharacter = charKey;
+                                localStorage.setItem('dravexoSelectedCharacter', selectedCharacter);
+                                
+                                updateCurrencyDisplay();
+                                populateCharacterSelect();
+                                showMessage("SUCCESS", `${charData.name} Unlocked!`);
+                            });
+                        } else {
+                            showMessage("LOCKED", "Not enough coins!");
+                        }
+                    }
+                }
+            };
+            optionsContainer.appendChild(option);
+        });
+        container.appendChild(optionsContainer);
+    };
+
+    // Create the two sections
+    createGroup("HEROES", heroKeys);
+    createGroup("VILLAINS", villainKeys);
 }
 
 characterBtn.addEventListener('click', () => {
@@ -692,11 +1313,123 @@ characterBtn.addEventListener('click', () => {
     characterSelectScreen.classList.remove('hidden');
 });
 
+// --- Background Animation Button Logic ---
+if (bgAnimBtn) {
+    bgAnimBtn.addEventListener('click', () => {
+        playSound(uiClickSound);
+        homeScreen.classList.add('hidden');
+        populateBackgroundAnimationSelect(); // Refresh UI
+        backgroundSelectScreen.classList.remove('hidden');
+    });
+}
+
+if (closeBgBtn) {
+    closeBgBtn.addEventListener('click', () => {
+        playSound(uiClickSound);
+        backgroundSelectScreen.classList.add('hidden');
+        homeScreen.classList.remove('hidden');
+    });
+}
+
+// --- Land Button Logic ---
+if (landBtn) {
+    landBtn.addEventListener('click', () => {
+        playSound(uiClickSound);
+        homeScreen.classList.add('hidden');
+        populateLandSelect();
+        landSelectScreen.classList.remove('hidden');
+    });
+}
+if (closeLandBtn) {
+    closeLandBtn.addEventListener('click', () => {
+        playSound(uiClickSound);
+        landSelectScreen.classList.add('hidden');
+        homeScreen.classList.remove('hidden');
+    });
+}
+
+// --- Watch Ad Button Logic ---
+function updateAdButton() {
+    if (!watchAdBtn) return;
+    let adWatchCount = parseInt(localStorage.getItem('dravexoAdWatchCount')) || 0;
+    const lastAdTime = parseInt(localStorage.getItem('dravexoLastAdWatchTime')) || 0;
+    const now = Date.now();
+    const cooldown = 300000; // 5 minutes in milliseconds
+
+    // If count is 3 or more, check cooldown
+    if (adWatchCount >= 3) {
+        const diff = now - lastAdTime;
+        if (diff < cooldown) {
+            const remaining = Math.ceil((cooldown - diff) / 1000);
+            const m = Math.floor(remaining / 60);
+            const s = remaining % 60;
+            const timeText = `${m}:${s.toString().padStart(2, '0')}`;
+            
+            watchAdBtn.innerHTML = `⏳ <span class="ad-text">${timeText}</span>`;
+            watchAdBtn.disabled = true;
+        } else {
+            // Cooldown over, reset count
+            localStorage.setItem('dravexoAdWatchCount', 0);
+            watchAdBtn.innerHTML = `📺 <span class="ad-text">GET 50 (3/3)</span>`;
+            watchAdBtn.disabled = false;
+        }
+    } else {
+        // User can watch ad
+        const left = 3 - adWatchCount;
+        watchAdBtn.innerHTML = `📺 <span class="ad-text">GET 50 (${left}/3)</span>`;
+        watchAdBtn.disabled = false;
+    }
+}
+
+// Update ad button every second
+setInterval(updateAdButton, 1000);
+
+if (watchAdBtn) {
+    updateAdButton(); // Initial check
+    watchAdBtn.addEventListener('click', () => {
+        playSound(uiClickSound);
+        
+        // Double check cooldown
+        if (watchAdBtn.disabled) return;
+
+        showRewardedAd(() => {
+            totalCoins += 50;
+            localStorage.setItem('dravexoTotalCoins', totalCoins);
+            
+            // Update Count
+            let adWatchCount = parseInt(localStorage.getItem('dravexoAdWatchCount')) || 0;
+            adWatchCount++;
+            localStorage.setItem('dravexoAdWatchCount', adWatchCount);
+
+            // If 3rd ad, start cooldown
+            if (adWatchCount >= 3) {
+                localStorage.setItem('dravexoLastAdWatchTime', Date.now());
+            }
+
+            updateCurrencyDisplay();
+            updateAdButton(); // Update UI immediately
+            showMessage("REWARD", "You received 50 Coins!");
+        });
+    });
+}
+
 closeCharacterBtn.addEventListener('click', () => {
     playSound(uiClickSound);
     characterSelectScreen.classList.add('hidden');
     homeScreen.classList.remove('hidden');
 });
+
+if (randomCharBtn) {
+    randomCharBtn.addEventListener('click', () => {
+        playSound(uiClickSound);
+        if (unlockedCharacters.length > 0) {
+            const randomIndex = Math.floor(Math.random() * unlockedCharacters.length);
+            selectedCharacter = unlockedCharacters[randomIndex];
+            localStorage.setItem('dravexoSelectedCharacter', selectedCharacter);
+            populateCharacterSelect(); // Refresh UI to show selection
+        }
+    });
+}
 
 // --- LEVEL DATA ---
 let platforms = [];
@@ -848,7 +1581,7 @@ const levels = [
   {
     width: 800,
     height: 400,
-    platforms: [ { x: 0, y: 350, w: 150, h: 50 }, { x: 400, y: 350, w: 150, h: 20, fake: true }, { x: 700, y: 200, w: 100, h: 20 } ],
+    platforms: [ { x: 0, y: 350, w: 150, h: 50 }, { x: 250, y: 300, w: 100, h: 20 }, { x: 400, y: 350, w: 150, h: 20, fake: false }, { x: 700, y: 200, w: 100, h: 20 } ],
     enemies: [],
     coins: [ { x: 450, y: 320, w: 15, h: 15 }, { x: 750, y: 170, w: 15, h: 15 } ],
     powerUps: [ { x: 100, y: 300, w: 25, h: 25, type: 'doubleJump' } ],
@@ -969,7 +1702,7 @@ const levels = [
         { x: 325, y: 150, w: 150, h: 20 }  // Top Platform
     ],
     enemies: [ 
-        { x: 360, y: 100, w: 80, h: 80, type: 'boss', hp: 20, maxHp: 20, shootTimer: 100, startY: 100 } 
+        { x: 360, y: 100, w: 80, h: 80, type: 'boss', hp: 15, maxHp: 15, shootTimer: 150, startY: 100 } 
     ],
     coins: [],
     powerUps: [ { x: 50, y: 300, w: 25, h: 25, type: 'doubleJump' }, { x: 700, y: 300, w: 25, h: 25, type: 'shield' } ],
@@ -1025,8 +1758,84 @@ const levels = [
     coins: [],
     powerUps: [{x:50,y:300,w:25,h:25,type:'shield'}],
     playerStart: {x:50,y:300}, goal: {x:-1000,y:-1000,w:0,h:0}
+  },
+  // Level 26: Ice Cavern (Slippery)
+  {
+    width: 800, height: 400, type: 'ice', // New Ice Type
+    platforms: [{x:0,y:350,w:800,h:50}, {x:200,y:300,w:100,h:20}, {x:500,y:250,w:100,h:20}],
+    enemies: [{x:300,y:320,w:30,h:30,type:'patrol',dx:2,patrol:100}],
+    coins: [{x:250,y:250,w:15,h:15}, {x:550,y:200,w:15,h:15}],
+    powerUps: [],
+    playerStart: {x:50,y:300}, goal: {x:-1000,y:-1000,w:0,h:0}
   }
 ];
+
+// --- PROCEDURAL LEVEL GENERATOR (To reach 125 Levels) ---
+function generateLevels() {
+    const totalLevelsNeeded = 125;
+    const currentCount = levels.length;
+
+    for (let i = currentCount; i < totalLevelsNeeded; i++) {
+        const difficulty = 1 + (i * 0.05); // Increase difficulty
+        const isBossLevel = (i + 1) % 25 === 0; // Every 25th level is a boss
+
+        let newLevel = {
+            width: 800 + (i * 10), // Levels get longer
+            height: 400,
+            platforms: [{x:0, y:350, w: 200, h:50}], // Start platform
+            enemies: [],
+            coins: [],
+            playerStart: {x: 50, y: 300},
+            goal: {x: 0, y: 0, w: 20, h: 50},
+            type: 'normal'
+        };
+
+        // Assign Theme based on Session (25 levels per session)
+        if (i >= 25 && i < 50) newLevel.type = 'ice';      // Session 2
+        else if (i >= 50 && i < 75) newLevel.type = 'lava'; // Session 3
+        else if (i >= 75 && i < 100) newLevel.type = 'space'; // Session 4
+        else if (i >= 100) newLevel.type = 'cyber';        // Session 5
+
+        if (isBossLevel) {
+            // Boss Arena
+            newLevel.width = 800;
+            newLevel.platforms.push({x:0, y:350, w:800, h:50});
+            newLevel.enemies.push({x:600, y:200, w:60, h:60, type:'boss', hp: 20 + (i/5), maxHp: 20 + (i/5), shootTimer: 100, startY: 200});
+            newLevel.goal = {x: -1000, y: -1000, w:0, h:0}; // Hidden goal
+        } else {
+            // Procedural Platforms
+            let currentX = 200;
+            let currentY = 300;
+            while (currentX < newLevel.width - 100) {
+                const gap = 50 + Math.random() * 100 * difficulty;
+                const width = 80 + Math.random() * 100;
+                const heightChange = (Math.random() - 0.5) * 100;
+                
+                currentX += gap;
+                currentY += heightChange;
+                if (currentY > 350) currentY = 350;
+                if (currentY < 100) currentY = 100;
+
+                newLevel.platforms.push({x: currentX, y: currentY, w: width, h: 20});
+
+                // Add Enemy?
+                if (Math.random() < 0.4) {
+                    const type = Math.random() > 0.5 ? 'patrol' : 'fly';
+                    newLevel.enemies.push({x: currentX + 20, y: currentY - 30, w: 30, h: 30, type: type, dx: 2, patrol: width/2, startY: currentY - 30});
+                }
+                // Add Coin?
+                if (Math.random() < 0.6) {
+                    newLevel.coins.push({x: currentX + width/2, y: currentY - 40, w: 15, h: 15});
+                }
+            }
+            // Goal at end
+            newLevel.platforms.push({x: newLevel.width - 150, y: 300, w: 150, h: 50});
+            newLevel.goal = {x: newLevel.width - 50, y: 250, w: 20, h: 50};
+        }
+        levels.push(newLevel);
+    }
+}
+generateLevels(); // Generate remaining levels on startup
 
 let keys = {};
 let justPressed = {}; // To track single key presses for actions like jumping
@@ -1038,94 +1847,6 @@ document.addEventListener("keydown", e => {
     keys[e.key] = true;
 });
 document.addEventListener("keyup", e => keys[e.key] = false);
-
-// --- Audio ---
-// Helper function to load and play sounds
-function createSound(src, loop = false, isMusic = false) {
-  const sound = new Audio(src);
-    sound.loop = loop;
-    let fadeInterval;
-
-  return {
-    play: () => {
-      if (!soundEnabled) return;
-
-      // For short, non-looping sound effects, we clone the audio element.
-      // This allows multiple instances of the same sound to overlap,
-      // preventing them from cutting each other off (e.g., collecting coins quickly).
-      if (!isMusic && !loop) {
-          const clone = sound.cloneNode();
-          clone.volume = Math.max(0, Math.min(1, globalVolume));
-          const playPromise = clone.play();
-          if (playPromise !== undefined) {
-              playPromise.catch(e => {});
-          }
-          return;
-      }
-
-      // For music or looping sounds, we use a single audio element.
-      clearInterval(fadeInterval);
-      let vol = isMusic ? musicVolume : globalVolume;
-      if (!Number.isFinite(vol)) vol = 0.5;
-      sound.volume = Math.max(0, Math.min(1, vol));
-      sound.currentTime = 0; // Restart the sound from the beginning
-      const playPromise = sound.play();
-      if (playPromise !== undefined) {
-          playPromise.catch(e => console.warn(`Sound error (${src}):`, e));
-      }
-    },
-    resume: () => {
-      if (!soundEnabled) return;
-      clearInterval(fadeInterval);
-      
-      let vol = isMusic ? musicVolume : globalVolume;
-      if (!Number.isFinite(vol)) vol = 0.5; 
-      sound.volume = Math.max(0, Math.min(1, vol)); 
-      
-      const playPromise = sound.play();
-      if (playPromise !== undefined) {
-          playPromise.catch(e => console.warn(`Sound error (${src}):`, e));
-      }
-    },
-    stop: () => {
-        clearInterval(fadeInterval);
-        sound.pause();
-    },
-    setVolume: (vol) => {
-        sound.volume = vol;
-    },
-    fadeOut: (duration = 1000) => {
-        if (sound.paused) return;
-        const stepTime = 50;
-        const steps = duration / stepTime;
-        const volStep = sound.volume / steps;
-        clearInterval(fadeInterval);
-        fadeInterval = setInterval(() => {
-            if (sound.volume > volStep) {
-                sound.volume -= volStep;
-            } else {
-                sound.volume = 0;
-                sound.pause();
-                clearInterval(fadeInterval);
-            }
-        }, stepTime);
-    }
-  };
-}
-
-// Load your sound files here. Make sure you have an 'assets' folder.
-let jumpSound = createSound("jump.wav", false);
-let coinSound = createSound("coin.wav");
-let stompSound = createSound("stomp.wav");
-let deathSound = createSound("death.wav");
-let levelWinSound = createSound("win.wav");
-let powerUpSound = createSound("powerup.wav");
-let grappleSound = createSound("grapple.wav");
-let dashSound = createSound("dash.wav");
-let shootSound = createSound("laser.wav", false); // Sound for the new enemy
-let backgroundMusic = createSound("music.mp3", true, true);
-let uiClickSound = createSound("click.wav");
-let landSound = createSound("land.wav");
 
 function generateStars() {
     stars = []; // Clear existing stars
@@ -1242,6 +1963,31 @@ function loadLevel(levelIndex) {
   player.invincibleTimer = 0;
   respawnPoint = JSON.parse(JSON.stringify(playerStart));
   lastSafePos = JSON.parse(JSON.stringify(playerStart)); // Reset safe pos
+  player.w = 30; // Reset size
+  player.h = 30;
+
+  // --- Apply Character Abilities ---
+  player.speed = BASE_SPEED;
+  player.jumpForce = BASE_JUMP_FORCE;
+  player.dashDuration = BASE_DASH_DURATION;
+  player.gravityScale = 1;
+
+  if (selectedCharacter === 'green') player.jumpForce = -13; // Slime: Super Jump
+  if (selectedCharacter === 'purple') player.dashDuration = 15; // Void: Long Dash
+  if (selectedCharacter === 'orange') player.speed = 6; // Inferno: Super Speed
+  if (selectedCharacter === 'red') player.hasShield = true; // Crimson: Start with Shield
+  if (selectedCharacter === 'dark') player.maxJumps = 3; // Ninja: Triple Jump
+  
+  // Enemy Skin Abilities
+  if (selectedCharacter === 'walker') player.speed = 5.5; // Fast Walker
+  if (selectedCharacter === 'flyer') player.gravityScale = 0.6; // Low Gravity
+  if (selectedCharacter === 'shooter') player.hasShield = true; // Turret Shield
+  if (selectedCharacter === 'boss') { player.w = 50; player.h = 50; player.hasShield = true; } // Giant Boss
+  
+  // Apply Level Type Effects
+  if (level.type === 'space') player.gravityScale *= 0.6; // Low Gravity in Space
+
+  // Midas handled in coin collection
 
   // --- Camera Snap ---
   // Center camera on player start, then clamp
@@ -1257,7 +2003,9 @@ function reset(keepLevel = false) {
     if (!keepLevel) {
         score = 0;
         currentLevelIndex = 0; // Reset to level 1
+        consecutiveLosses = 0;
     }
+    timePlayed = 0; // Reset ad timer
     player.color = characters[selectedCharacter].color; // Set player color on reset
     gameState = 'PLAYING';
     pauseBtn.classList.remove('hidden'); // Show pause button when playing
@@ -1306,6 +2054,8 @@ function spawnCoins() {
 function playerDie() {
     playSound(deathSound);
     backgroundMusic.fadeOut(1000); // Fade out music on death instead of stopping abruptly
+    // startShake(20, 10); // Screen Shake removed (Vibration hataya)
+    consecutiveLosses++; // Increment loss counter
     gameState = 'GAME_OVER';
 
     const finalScore = Math.floor(score / 10);
@@ -1313,211 +2063,19 @@ function playerDie() {
         highScore = finalScore;
         localStorage.setItem('dravexoHighScore', highScore);
     }
+
+    // Show Revive button only if it's a loss (not a win)
+    if (reviveBtn) {
+        // You can add logic here to hide it if they already revived once
+        reviveBtn.classList.remove('hidden'); 
+    }
+
     showGameOverMenu(false);
 }
 
-function drawStartScreen() {
-  // Now handled by DOM overlay (index.html + style.css)
-}
-
-function drawGameOverScreen() {
-  // Now handled by DOM overlay
-}
-
-function drawGameWonScreen() {
-  // Now handled by DOM overlay
-}
-
-
-function update() {
-  // --- Cooldowns and Timers ---
-  if (player.dashCooldown > 0) player.dashCooldown--;
-  if (player.dashTimer > 0) player.dashTimer--;
-  
-  if (player.invincible) {
-      player.invincibleTimer--;
-      if (player.invincibleTimer <= 0) player.invincible = false;
-  }
-
-  if (hudLevel) {
-      hudLevel.innerText = "Level: " + (currentLevelIndex + 1);
-  }
-
-  // --- State Updates & Input Cancels ---
-  // Check for end of dash
-  if (player.isDashing && player.dashTimer <= 0) {
-    player.isDashing = false;
-    player.dy = 0; // Prevent sudden fall after dash
-  }
-  // Check for end of grapple
-  if (player.isGrappling && player.y <= player.grapplePoint.y) {
-    player.isGrappling = false;
-    player.y = player.grapplePoint.y;
-    player.dy = 0;
-  }
-
-  const jumpPressed = justPressed[" "] || justPressed["Space"] || justPressed["w"] || justPressed["W"] || justPressed["ArrowUp"];
-  // Cancel grapple with jump
-  if (player.isGrappling && jumpPressed) {
-    player.isGrappling = false;
-  }
-
-  // --- Handle Input & State-based Movement ---
-  const grapplePressed = justPressed["e"] || justPressed["E"];
-  if (grapplePressed) {
-    if (player.isGrappling) {
-      player.isGrappling = false; // Cancel if already grappling
-    } else if (!player.isDashing) {
-      // Find a grapple point straight above
-      let closestHit = null;
-      let closestDist = GRAPPLE_MAX_RANGE;
-
-      platforms.forEach(p => {
-        // Is the player horizontally aligned with the platform?
-        if (!p.fake && player.x + player.w > p.x && player.x < p.x + p.w) {
-          if (player.y > p.y + p.h) { // Is the platform above the player?
-            const dist = player.y - (p.y + p.h);
-            if (dist < closestDist) {
-              closestDist = dist;
-              closestHit = { x: player.x + player.w / 2, y: p.y + p.h };
-            }
-          }
-        }
-      });
-
-      if (closestHit) {
-        player.isGrappling = true;
-        player.grapplePoint = closestHit;
-        grappleSound.play();
-        player.onGround = false;
-        player.jumps = 1; // Using grapple counts as a jump
-      }
-    }
-  }
-
-  // --- Handle Input & State-based Movement ---
-  const dashPressed = justPressed["Shift"];
-  if (dashPressed && player.dashCooldown <= 0 && !player.isDashing) {
-    player.isDashing = true;
-    player.dashTimer = DASH_DURATION;
-    player.dashCooldown = DASH_COOLDOWN;
-    dashSound.play();
-  }
-
-  if (player.isGrappling) {
-    player.dy = GRAPPLE_PULL_SPEED;
-    player.dx = 0;
-  } else if (player.isDashing) {
-    player.dy = 0; // No gravity during dash
-    player.dx = player.facingDirection * DASH_SPEED;
-  } else {
-    // Normal Player movement
-    if (keys["a"] || keys["A"] || keys["ArrowLeft"]) {
-      player.dx = -PLAYER_SPEED;
-      player.facingDirection = -1;
-    } else if (keys["d"] || keys["D"] || keys["ArrowRight"]) {
-      player.dx = PLAYER_SPEED;
-      player.facingDirection = 1;
-    } else {
-      player.dx = 0;
-    }
-
-      // Player jump logic
-      if (jumpPressed) {
-        if (player.isTouchingWall && !player.onGround) { // Wall Jump
-          player.dy = JUMP_FORCE;
-          player.dx = -player.wallDirection * PLAYER_SPEED * 1.5; // Push away from wall
-          player.facingDirection = -player.wallDirection;
-          playSound(jumpSound);
-
-          // Enemies Jump (Wall Jump)
-          enemies.forEach(e => {
-            if (e.type === 'patrol' && e.y >= e.startY) e.dy = JUMP_FORCE;
-          });
-        } else if (player.jumps < player.maxJumps) { // Normal / Double Jump
-          player.dy = JUMP_FORCE;
-          jumpSound.play();
-          player.onGround = false;
-          player.jumps++;
-
-          // Enemies Jump (Normal Jump)
-          enemies.forEach(e => {
-            if (e.type === 'patrol' && e.y >= e.startY) e.dy = JUMP_FORCE;
-          });
-        }
-      }
-
-      // Apply gravity or wall slide speed
-      if (player.isTouchingWall && !player.onGround && player.dy > 0) {
-        player.dy = WALL_SLIDE_SPEED;
-      } else {
-        player.dy += GRAVITY;
-      }
-  }
-
-  player.x += player.dx;
-  player.y += player.dy;
-
-  player.onGround = false;
-    player.isTouchingWall = false; // Reset before collision checks
-
-  // Platform collision and movement
-  platforms.forEach(p => {
-    // Move the platform if it has a velocity
-    if (p.dx) {
-      p.x += p.dx;
-      const levelWidth = levels[currentLevelIndex].width || camera.width;
-      // Bounce off the level edges, not canvas edges
-      if (p.x + p.w > levelWidth || p.x < 0) {
-        p.dx *= -1;
-      }
-    }
-    
-    // Check for collision with the player
-    // We check if the player is falling (dy > 0) and if the player's bottom edge
-    // is intersecting with the top of the platform.
-    if (
-      player.x < p.x + p.w && player.x + player.w > p.x &&
-      player.y + player.h > p.y && player.y + player.h < p.y + 20 &&
-      player.dy >= 0 // Check for landing or sliding on top
-    ) {
-      if (p.fake) {
-        playerDie();
-      } else {
-        if (player.dy > GRAVITY) {
-            playSound(landSound);
-        }
-        player.y = p.y - player.h;
-        player.dy = 0;
-        player.onGround = true;
-        lastSafePos = { x: player.x, y: player.y }; // Update safe position when on ground
-        player.jumps = 0; // Reset jumps on landing
-        if (p.dx) {
-            player.x += p.dx;
-        }
-      }
-    }
-
-    // Wall collision check (separate from landing)
-    if (!p.fake && !player.onGround && player.y + player.h > p.y && player.y < p.y + p.h) {
-        // Hitting wall on player's right
-        if (player.dx > 0 && (player.x + player.w) > p.x && player.x < p.x) {
-            player.x = p.x - player.w;
-            player.isTouchingWall = true;
-            player.wallDirection = 1;
-        } // Hitting wall on player's left
-        else if (player.dx < 0 && player.x < (p.x + p.w) && player.x + player.w > p.x + p.w) {
-            player.x = p.x + p.w;
-            player.isTouchingWall = true;
-            player.wallDirection = -1;
-        }
-    }
-  });
-
-  // Enemy logic
-  for (let i = enemies.length - 1; i >= 0; i--) {
+// --- SEPARATE ENEMY CALCULATION (PHYSICS & LOGIC) ---
+function updateEnemyLogic(enemy, i) {
     // --- Movement AI based on type ---
-    const enemy = enemies[i];
     switch (enemy.type) {
       case 'patrol':
         // Moves left and right within a patrol range
@@ -1578,7 +2136,7 @@ function update() {
                 dx: Math.cos(angle) * speed, dy: Math.sin(angle) * speed
             });
             playSound(shootSound);
-            enemy.shootTimer = (enemy.hp / enemy.maxHp) * 100 + 30; // Shoot faster as HP drops
+            enemy.shootTimer = (enemy.hp / enemy.maxHp) * 120 + 50; // Shoot slower (Easier)
         }
         break;
       case 'boss2':
@@ -1631,6 +2189,23 @@ function update() {
       player.y < enemy.y + enemy.h &&
       player.y + player.h > enemy.y
     ) {
+      handleEnemyCollision(enemy, i);
+    }
+}
+
+function drawStartScreen() {
+  // Now handled by DOM overlay (index.html + style.css)
+}
+
+function drawGameOverScreen() {
+  // Now handled by DOM overlay
+}
+
+function drawGameWonScreen() {
+  // Now handled by DOM overlay
+}
+
+function handleEnemyCollision(enemy, i) {
       if (enemy.type === 'boss' || enemy.type === 'boss2') {
           // --- Boss Collision Logic ---
           const isStomp = player.dy > 0 && player.y + player.h < enemy.y + 30;
@@ -1639,6 +2214,7 @@ function update() {
           if (isStomp || isDashAttack) {
               enemy.hp--;
               playSound(stompSound);
+              startShake(5, 5); // Shake on hit
               player.dy = -12; // Big bounce off boss
               
               if (isDashAttack) {
@@ -1649,6 +2225,7 @@ function update() {
               if (enemy.hp <= 0) {
                   enemies.splice(i, 1);
                   score += 5000;
+                  spawnFloatingText(enemy.x, enemy.y, "+5000", "gold");
                   // Spawn Goal in center
                   goal = { x: 400, y: 300, w: 40, h: 60 };
                   playSound(levelWinSound);
@@ -1670,12 +2247,16 @@ function update() {
         if (player.isDashing) {
             enemies.splice(i, 1);
             playSound(stompSound);
+            startShake(5, 5);
             score += 150;
+            spawnFloatingText(enemy.x, enemy.y, "+150", "#e74c3c");
         } else if (player.dy > 0 && player.y + player.h < enemy.y + 25) {
             enemies.splice(i, 1);
             player.dy = -5;
             stompSound.play();
+            startShake(3, 3);
             score += 100;
+            spawnFloatingText(enemy.x, enemy.y, "+100", "white");
         } else {
         // Player is hit by the enemy (unless dashing)
         if (!player.isDashing && !player.invincible) {
@@ -1683,13 +2264,250 @@ function update() {
             player.hasShield = false; // Shield breaks
             player.dy = -5; // Knockback
             player.dx = -player.facingDirection * 5;
+            startShake(5, 5);
           } else {
             playerDie();
           }
         }
       }
       }
+}
+
+function update() {
+  const level = levels[currentLevelIndex];
+  const isIceLevel = level.type === 'ice';
+
+  // --- Update Juice (Shake & Text) ---
+  if (shakeDuration > 0) shakeDuration--;
+  
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+      const ft = floatingTexts[i];
+      ft.life--;
+      ft.yOffset -= 1; // Float up
+      if (ft.life <= 0) {
+          floatingTexts.splice(i, 1);
+      }
+  }
+
+  // --- Cooldowns and Timers ---
+  if (player.dashCooldown > 0) player.dashCooldown--;
+  if (player.dashTimer > 0) player.dashTimer--;
+  
+  if (player.invincible) {
+      player.invincibleTimer--;
+      if (player.invincibleTimer <= 0) player.invincible = false;
+  }
+
+  if (hudLevel) {
+      hudLevel.innerText = "Level: " + (currentLevelIndex + 1);
+  }
+
+  // --- State Updates & Input Cancels ---
+  // Check for end of dash
+  if (player.isDashing && player.dashTimer <= 0) {
+    player.isDashing = false;
+    player.dy = 0; // Prevent sudden fall after dash
+  }
+  // Check for end of grapple
+  if (player.isGrappling && player.y <= player.grapplePoint.y) {
+    player.isGrappling = false;
+    player.y = player.grapplePoint.y;
+    player.dy = 0;
+  }
+
+  // --- Coyote Time & Jump Buffer Logic ---
+  if (player.onGround) {
+      player.coyoteTimer = 6; // 6 frames grace period
+  } else {
+      if (player.coyoteTimer > 0) player.coyoteTimer--;
+  }
+
+  const rawJumpPressed = justPressed[" "] || justPressed["Space"] || justPressed["w"] || justPressed["W"] || justPressed["ArrowUp"];
+  if (rawJumpPressed) {
+      player.jumpBuffer = 6; // Buffer jump for 6 frames
+  }
+  if (player.jumpBuffer > 0) player.jumpBuffer--;
+
+  // Cancel grapple with jump
+  if (player.isGrappling && rawJumpPressed) {
+    player.isGrappling = false;
+  }
+
+  // --- Handle Input & State-based Movement ---
+  const grapplePressed = justPressed["e"] || justPressed["E"];
+  if (grapplePressed) {
+    if (player.isGrappling) {
+      player.isGrappling = false; // Cancel if already grappling
+    } else if (!player.isDashing) {
+      // Find a grapple point straight above
+      let closestHit = null;
+      let closestDist = GRAPPLE_MAX_RANGE;
+
+      platforms.forEach(p => {
+        // Is the player horizontally aligned with the platform?
+        if (!p.fake && player.x + player.w > p.x && player.x < p.x + p.w) {
+          if (player.y > p.y + p.h) { // Is the platform above the player?
+            const dist = player.y - (p.y + p.h);
+            if (dist < closestDist) {
+              closestDist = dist;
+              closestHit = { x: player.x + player.w / 2, y: p.y + p.h };
+            }
+          }
+        }
+      });
+
+      if (closestHit) {
+        player.isGrappling = true;
+        player.grapplePoint = closestHit;
+        grappleSound.play();
+        player.onGround = false;
+        player.jumps = 1; // Using grapple counts as a jump
+      }
     }
+  }
+
+  // --- Handle Input & State-based Movement ---
+  const dashPressed = justPressed["Shift"];
+  if (dashPressed && player.dashCooldown <= 0 && !player.isDashing) {
+    player.isDashing = true;
+    player.dashTimer = player.dashDuration; // Use dynamic duration
+    player.dashCooldown = DASH_COOLDOWN;
+    dashSound.play();
+  }
+
+  if (player.isGrappling) {
+    player.dy = GRAPPLE_PULL_SPEED;
+    player.dx = 0;
+  } else if (player.isDashing) {
+    player.dy = 0; // No gravity during dash
+    player.dx = player.facingDirection * BASE_DASH_SPEED; // Dash speed remains constant
+  } else {
+    // Normal Player movement
+    if (keys["a"] || keys["A"] || keys["ArrowLeft"]) {
+      if (isIceLevel && player.onGround) {
+          player.dx -= 0.5; // Acceleration on ice
+          if (player.dx < -player.speed) player.dx = -player.speed;
+      } else {
+          player.dx = -player.speed; // Instant speed on normal ground
+      }
+      player.facingDirection = -1;
+    } else if (keys["d"] || keys["D"] || keys["ArrowRight"]) {
+      if (isIceLevel && player.onGround) {
+          player.dx += 0.5; // Acceleration on ice
+          if (player.dx > player.speed) player.dx = player.speed;
+      } else {
+          player.dx = player.speed;
+      }
+      player.facingDirection = 1;
+    } else {
+      if (isIceLevel && player.onGround) {
+          // Slippery Friction
+          player.dx *= 0.96; 
+          if (Math.abs(player.dx) < 0.1) player.dx = 0;
+      } else {
+          player.dx = 0;
+      }
+    }
+
+      // Player jump logic
+      if (player.jumpBuffer > 0) {
+        if (player.isTouchingWall && !player.onGround) { // Wall Jump
+          player.dy = player.jumpForce; // Use dynamic jump
+          player.dx = -player.wallDirection * player.speed * 1.5; // Push away from wall
+          player.facingDirection = -player.wallDirection;
+          playSound(jumpSound);
+          player.jumpBuffer = 0; // Consume buffer
+
+          // Enemies Jump (Wall Jump)
+          enemies.forEach(e => {
+            if (e.type === 'patrol' && e.y >= e.startY) e.dy = BASE_JUMP_FORCE;
+          });
+        } else if (player.coyoteTimer > 0 || player.jumps < player.maxJumps) { // Normal / Double Jump (using Coyote)
+          player.dy = player.jumpForce; // Use dynamic jump
+          jumpSound.play();
+          player.onGround = false;
+          player.jumps++;
+          player.jumpBuffer = 0; // Consume buffer
+          player.coyoteTimer = 0; // Consume coyote time
+
+          // Enemies Jump (Normal Jump)
+          enemies.forEach(e => {
+            if (e.type === 'patrol' && e.y >= e.startY) e.dy = BASE_JUMP_FORCE;
+          });
+        }
+      }
+
+      // Apply gravity or wall slide speed
+      if (player.isTouchingWall && !player.onGround && player.dy > 0) {
+        player.dy = WALL_SLIDE_SPEED;
+      } else {
+        player.dy += GRAVITY * player.gravityScale;
+      }
+  }
+
+  player.x += player.dx;
+  player.y += player.dy;
+
+  player.onGround = false;
+    player.isTouchingWall = false; // Reset before collision checks
+
+  // Platform collision and movement
+  platforms.forEach(p => {
+    // Move the platform if it has a velocity
+    if (p.dx) {
+      p.x += p.dx;
+      const levelWidth = levels[currentLevelIndex].width || camera.width;
+      // Bounce off the level edges, not canvas edges
+      if (p.x + p.w > levelWidth || p.x < 0) {
+        p.dx *= -1;
+      }
+    }
+    
+    // Check for collision with the player
+    // We check if the player is falling (dy > 0) and if the player's bottom edge
+    // is intersecting with the top of the platform.
+    if (
+      player.x < p.x + p.w && player.x + player.w > p.x &&
+      player.y + player.h > p.y && player.y + player.h < p.y + 20 &&
+      player.dy >= 0 // Check for landing or sliding on top
+    ) {
+      if (p.fake) {
+        playerDie();
+      } else {
+        if (player.dy > GRAVITY) {
+            playSound(landSound);
+            if (player.dy > 10) startShake(3, 2); // Shake on heavy landing
+        }
+        player.y = p.y - player.h;
+        player.dy = 0;
+        player.onGround = true;
+        lastSafePos = { x: player.x, y: player.y }; // Update safe position when on ground
+        player.jumps = 0; // Reset jumps on landing
+        if (p.dx) {
+            player.x += p.dx;
+        }
+      }
+    }
+
+    // Wall collision check (separate from landing)
+    if (!p.fake && !player.onGround && player.y + player.h > p.y && player.y < p.y + p.h) {
+        // Hitting wall on player's right
+        if (player.dx > 0 && (player.x + player.w) > p.x && player.x < p.x) {
+            player.x = p.x - player.w;
+            player.isTouchingWall = true;
+            player.wallDirection = 1;
+        } // Hitting wall on player's left
+        else if (player.dx < 0 && player.x < (p.x + p.w) && player.x + player.w > p.x + p.w) {
+            player.x = p.x + p.w;
+            player.isTouchingWall = true;
+            player.wallDirection = -1;
+        }
+    }
+  });
+
+  // Enemy logic
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    updateEnemyLogic(enemies[i], i);
   }
 
   // Projectile logic
@@ -1735,7 +2553,15 @@ function update() {
     ) {
       coins.splice(i, 1); // Remove the coin
       playSound(coinSound);
-      score += 50; // Increase score
+      
+      // Midas Ability: Double Coins
+      const coinValue = (selectedCharacter === 'gold') ? 20 : 10;
+      const scoreValue = (selectedCharacter === 'gold') ? 100 : 50;
+
+      score += scoreValue; // Increase score
+      totalCoins += coinValue; // Add to persistent wallet
+      localStorage.setItem('dravexoTotalCoins', totalCoins);
+      spawnFloatingText(coin.x, coin.y, "+" + scoreValue, "gold");
     }
   }
 
@@ -1751,9 +2577,11 @@ function update() {
       if (powerUp.type === 'doubleJump') {
         player.maxJumps = 2;
         playSound(powerUpSound);
+        spawnFloatingText(powerUp.x, powerUp.y, "DOUBLE JUMP!", "cyan");
       } else if (powerUp.type === 'shield') {
         player.hasShield = true;
         playSound(powerUpSound);
+        spawnFloatingText(powerUp.x, powerUp.y, "SHIELD!", "blue");
       }
       powerUps.splice(i, 1); // Remove the power-up
       score += 200; // Bonus score for power-up
@@ -1786,6 +2614,8 @@ function update() {
     player.y + player.h > goal.y
   ) {
     levelWinSound.play();
+    backgroundMusic.stop(); // Stop music on win
+      consecutiveLosses = 0; // Reset losses on win
       currentLevelIndex++;
       
       // Update max level reached
@@ -1800,12 +2630,10 @@ function update() {
       levelCompleteScreen.classList.remove('hidden');
       gameUI.classList.add('hidden');
       pauseBtn.classList.add('hidden');
-      // Let music continue playing on the level complete screen
       gameState = 'LEVEL_COMPLETE';
       // loadLevel will be called by the next level button
     } else {
       gameState = 'GAME_WON';
-      // Let music continue playing on the win screen
       // Check and set high score when the game is won
       const finalScore = Math.floor(score / 10);
       if (finalScore > highScore) {
@@ -1825,7 +2653,6 @@ function update() {
   score++;
 
   // --- Camera Follow Logic ---
-  const level = levels[currentLevelIndex];
   const levelWidth = level.width || camera.width;
   const levelHeight = level.height || camera.height;
 
@@ -1865,9 +2692,9 @@ function draw3DBlock(x, y, w, h, color, depth = 4) {
     ctx.fill();
     
     // Edge definition (Graphics improvement)
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = "rgba(0,0,0,0.15)";
-    ctx.strokeRect(x, y, w, h);
+    // ctx.lineWidth = 1; // Removed for performance
+    // ctx.strokeStyle = "rgba(0,0,0,0.15)";
+    // ctx.strokeRect(x, y, w, h);
 
     // Front Face
     ctx.fillStyle = color;
@@ -1882,9 +2709,16 @@ function draw() {
   // Draw the selected background animation
   drawBackground();
   
+  // --- Apply Screen Shake ---
+  if (shakeDuration > 0) {
+      const dx = (Math.random() - 0.5) * shakeIntensity;
+      const dy = (Math.random() - 0.5) * shakeIntensity;
+      ctx.translate(dx, dy);
+  }
+
   // --- Draw Game World (translated by camera) ---
   ctx.save();
-  ctx.translate(-Math.round(camera.x), -Math.round(camera.y)); // Use Math.round for crisp pixels
+  ctx.translate(-camera.x, -camera.y); // Removed Math.round for smoother camera movement
 
   // Draw Shield (if active)
   if (player.hasShield) {
@@ -1898,6 +2732,88 @@ function draw() {
   // --- Draw Player ---
   // Set base color from selected character, but allow overrides for states
   if (!player.invincible || Math.floor(Date.now() / 100) % 2 !== 0) {
+      
+  // --- TRY DRAWING SPRITE (PHOTO) FIRST ---
+  const spriteKey = 'player_' + selectedCharacter;
+  if (sprites[spriteKey] && sprites[spriteKey].complete && sprites[spriteKey].naturalWidth !== 0) {
+      ctx.save();
+      ctx.translate(player.x + player.w/2, player.y + player.h/2);
+      ctx.scale(player.facingDirection, 1); // Flip sprite based on direction
+      ctx.drawImage(sprites[spriteKey], -player.w/2 - 5, -player.h/2 - 5, player.w + 10, player.h + 10); // Draw slightly larger than hitbox
+      ctx.restore();
+  } else {
+      
+  // --- ENEMY SKINS RENDERING ---
+  if (selectedCharacter === 'walker') {
+      // Walker Skin
+      const time = Date.now();
+      const walkCycle = player.onGround && player.dx !== 0 ? Math.sin(time / 100) * 5 : 0;
+      ctx.fillStyle = "#922b21"; 
+      // Legs
+      ctx.fillRect(player.x + 5, player.y + player.h - 5, 8, 12 + walkCycle); 
+      ctx.fillRect(player.x + player.w - 13, player.y + player.h - 5, 8, 12 - walkCycle);
+      // Body
+      draw3DBlock(player.x, player.y, player.w, player.h, "#c0392b");
+      // Eyes
+      ctx.fillStyle = "white";
+      ctx.fillRect(player.x + 4, player.y + 6, 8, 8);
+      ctx.fillRect(player.x + player.w - 12, player.y + 6, 8, 8);
+      // Pupils
+      ctx.fillStyle = "black";
+      const look = player.facingDirection * 2;
+      ctx.fillRect(player.x + 6 + look, player.y + 8, 4, 4);
+      ctx.fillRect(player.x + player.w - 10 + look, player.y + 8, 4, 4);
+      // Eyebrows
+      ctx.beginPath(); ctx.moveTo(player.x + 2, player.y + 4); ctx.lineTo(player.x + 12, player.y + 8); ctx.lineTo(player.x + 12, player.y + 2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(player.x + player.w - 2, player.y + 4); ctx.lineTo(player.x + player.w - 12, player.y + 8); ctx.lineTo(player.x + player.w - 12, player.y + 2); ctx.fill();
+
+  } else if (selectedCharacter === 'flyer') {
+      // Flyer Skin
+      const sway = player.onGround ? 0 : Math.sin(Date.now() / 200) * 3;
+      ctx.fillStyle = "#6c3483"; 
+      ctx.fillRect(player.x + 8 + sway, player.y + player.h - 5, 4, 10);
+      ctx.fillRect(player.x + player.w - 12 + sway, player.y + player.h - 5, 4, 10);
+      // Body
+      draw3DBlock(player.x, player.y, player.w, player.h, "#8e44ad");
+      // Wings
+      const flap = player.onGround ? 0 : Math.sin(Date.now() / 50) * 8;
+      ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+      ctx.beginPath(); ctx.moveTo(player.x, player.y + 10); ctx.lineTo(player.x - 12, player.y - 5 + flap); ctx.lineTo(player.x, player.y + 5); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(player.x + player.w, player.y + 10); ctx.lineTo(player.x + player.w + 12, player.y - 5 + flap); ctx.lineTo(player.x + player.w, player.y + 5); ctx.fill();
+      // Eye
+      ctx.fillStyle = "#f1c40f";
+      ctx.fillRect(player.x + player.w/2 - 5, player.y + 8, 10, 8);
+
+  } else if (selectedCharacter === 'shooter') {
+      // Shooter Skin
+      ctx.fillStyle = "#2c3e50";
+      // Legs
+      ctx.beginPath(); ctx.moveTo(player.x + 5, player.y + player.h - 5); ctx.lineTo(player.x - 8, player.y + player.h + 10); ctx.lineTo(player.x + 5, player.y + player.h); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(player.x + player.w - 5, player.y + player.h - 5); ctx.lineTo(player.x + player.w + 8, player.y + player.h + 10); ctx.lineTo(player.x + player.w - 5, player.y + player.h); ctx.fill();
+      // Body
+      draw3DBlock(player.x, player.y, player.w, player.h, "#34495e");
+      // Barrel
+      ctx.fillStyle = "black";
+      if (player.facingDirection > 0) ctx.fillRect(player.x + player.w, player.y + 8, 8, 8);
+      else ctx.fillRect(player.x - 8, player.y + 8, 8, 8);
+      // Sensor
+      ctx.fillStyle = "red";
+      ctx.fillRect(player.x + player.w/2 - 4, player.y + 4, 8, 4);
+
+  } else if (selectedCharacter === 'boss') {
+      // Boss Skin
+      draw3DBlock(player.x, player.y, player.w, player.h, "#8e44ad");
+      // Big Eyes
+      ctx.fillStyle = "white";
+      ctx.fillRect(player.x + 10, player.y + 10, 10, 10);
+      ctx.fillRect(player.x + player.w - 20, player.y + 10, 10, 10);
+      ctx.fillStyle = "red";
+      const look = player.facingDirection * 3;
+      ctx.fillRect(player.x + 12 + look, player.y + 12, 6, 6);
+      ctx.fillRect(player.x + player.w - 18 + look, player.y + 12, 6, 6);
+
+  } else {
+  // --- DEFAULT ROBOT RENDERING ---
   let pColor = player.color;
   if (player.isGrappling) {
       pColor = "pink";
@@ -1915,7 +2831,7 @@ function draw() {
   const bodyYOffset = bobCycle;
 
   // --- Draw Jetpack/Jump Flames ---
-  if (!player.onGround && player.dy > -JUMP_FORCE / 2) {
+  if (!player.onGround && player.dy > -player.jumpForce / 2) {
       const flameCount = player.jumps > 1 ? 5 : 3; // More flames for double jump
       for (let i = 0; i < flameCount; i++) {
           const flameX = player.x + player.w / 2 + (Math.random() - 0.5) * (player.w * 0.6);
@@ -1990,15 +2906,40 @@ function draw() {
   ctx.restore();
   // Front Foot
   draw3DBlock(player.x + player.w * 0.9 - footW, footY + footStride, footW, footH, "#34495e", 3);
+  } // End of Default Robot
+  } // End of Sprite Check
   }
 
   // Draw platforms
   platforms.forEach(p => {
-    draw3DBlock(p.x, p.y, p.w, p.h, "lime");
+    const levelType = levels[currentLevelIndex].type;
+    let colorToUse = "lime"; // Fallback
+
+    if (selectedLandColor !== 'default' && landColors[selectedLandColor]) {
+        // Use selected custom color
+        colorToUse = landColors[selectedLandColor].color;
+    } else {
+        // Use Default Dynamic Colors
+        if (levelType === 'ice') colorToUse = "#aed6f1";
+        else if (levelType === 'lava') colorToUse = "#c0392b";
+        else if (levelType === 'space') colorToUse = "#8e44ad";
+        else if (levelType === 'cyber') colorToUse = "#2ecc71";
+        else colorToUse = "lime";
+    }
+
+    draw3DBlock(p.x, p.y, p.w, p.h, colorToUse);
   });
 
   // Draw enemies
   enemies.forEach(enemy => {
+    // Try drawing enemy sprite
+    const enemySpriteKey = 'enemy_' + enemy.type;
+    if (sprites[enemySpriteKey] && sprites[enemySpriteKey].complete && sprites[enemySpriteKey].naturalWidth !== 0) {
+        ctx.drawImage(sprites[enemySpriteKey], enemy.x - 5, enemy.y - 5, enemy.w + 10, enemy.h + 10);
+        // Draw HP bar for boss if needed
+        if (enemy.type === 'boss' || enemy.type === 'boss2') { /* ... existing HP bar logic ... */ }
+    } else {
+    // Fallback to procedural drawing
     if (enemy.type === 'boss') {
         draw3DBlock(enemy.x, enemy.y, enemy.w, enemy.h, "#8e44ad"); // Purple Boss
         // Draw Boss HP Bar
@@ -2112,6 +3053,7 @@ function draw() {
             draw3DBlock(enemy.x, enemy.y, enemy.w, enemy.h, "red");
         }
     }
+    } // End Sprite Check
     }
   });
 
@@ -2175,6 +3117,16 @@ function draw() {
     ctx.fillRect(goal.x + goal.w / 4, goal.y, goal.w / 2, goal.h);
   }
 
+  // --- Draw Floating Texts ---
+  floatingTexts.forEach(ft => {
+      ctx.fillStyle = ft.color;
+      ctx.font = "bold 16px Arial";
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 2;
+      ctx.strokeText(ft.text, ft.x, ft.y + ft.yOffset);
+      ctx.fillText(ft.text, ft.x, ft.y + ft.yOffset);
+  });
+
   ctx.restore();
   ctx.restore(); // Restore the scaleFactor save
 
@@ -2219,15 +3171,133 @@ function drawBackground() {
     if (selectedBackgroundAnimation === 'indianGradient') {
         // Use cached image instead of redrawing paths every frame
         ctx.drawImage(bgCache, 0, 0);
+
     } else if (selectedBackgroundAnimation === 'starfield') {
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, camera.width, camera.height);
         ctx.fillStyle = 'white';
         stars.forEach(star => {
-            ctx.beginPath();
-            ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.fillRect(star.x, star.y, star.size * 1.5, star.size * 1.5); // Optimized: Rect instead of Arc
         });
+
+    } else if (selectedBackgroundAnimation === 'retroGrid') {
+        // Synthwave Style
+        ctx.fillStyle = "#2c003e"; // Dark Purple
+        ctx.fillRect(0, 0, camera.width, camera.height);
+        
+        // Sun
+        const sunY = camera.height * 0.3;
+        const sunX = camera.width * 0.5;
+        const grad = ctx.createLinearGradient(0, 0, 0, camera.height);
+        grad.addColorStop(0, "#ffcc00"); grad.addColorStop(1, "#ff00cc");
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(sunX, sunY, 60, 0, Math.PI, true); ctx.fill();
+
+        // Grid
+        ctx.strokeStyle = "rgba(255, 0, 255, 0.5)";
+        ctx.lineWidth = 2;
+        const time = Date.now() / 100;
+        const horizon = camera.height * 0.5;
+        
+        // Moving Horizontal Lines
+        for (let i = 0; i < 10; i++) {
+            const y = horizon + ((time + i * 20) % 200) * (camera.height/200);
+            if (y > horizon) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(camera.width, y); ctx.stroke();
+            }
+        }
+        // Perspective Vertical Lines
+        for (let i = -10; i < 20; i++) {
+            ctx.beginPath(); ctx.moveTo(sunX + i * 100, camera.height); ctx.lineTo(sunX, horizon); ctx.stroke();
+        }
+
+    } else if (selectedBackgroundAnimation === 'matrix') {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.9)";
+        ctx.fillRect(0, 0, camera.width, camera.height);
+        ctx.fillStyle = "#0f0";
+        ctx.font = "14px monospace";
+        const time = Math.floor(Date.now() / 50);
+        for (let i = 0; i < camera.width / 20; i++) {
+            const y = (time * 10 + i * 50) % (camera.height + 100) - 50;
+            ctx.fillText(String.fromCharCode(0x30A0 + (i % 96)), i * 20, y);
+        }
+
+    } else if (selectedBackgroundAnimation === 'fire') {
+        ctx.fillStyle = "#200000";
+        ctx.fillRect(0, 0, camera.width, camera.height);
+        const time = Date.now() / 5;
+        for (let i = 0; i < 50; i++) {
+            const x = (i * 30 + Math.sin(time/100 + i)*20) % camera.width;
+            const y = camera.height - ((time + i * 10) % camera.height);
+            const size = Math.random() * 20 + 10;
+            ctx.fillStyle = `rgba(255, ${Math.random()*150}, 0, ${1 - y/camera.height})`;
+            ctx.fillRect(x, y, size, size); // Optimized: Rect instead of Arc
+        }
+
+    } else if (selectedBackgroundAnimation === 'snow') {
+        ctx.fillStyle = "#2c3e50";
+        ctx.fillRect(0, 0, camera.width, camera.height);
+        ctx.fillStyle = "white";
+        const time = Date.now() / 10;
+        for (let i = 0; i < 100; i++) {
+            const x = (i * 17 + time) % camera.width;
+            const y = (i * 13 + time) % camera.height;
+            ctx.fillRect(x, y, (i%3)+2, (i%3)+2); // Optimized: Rect instead of Arc
+        }
+
+    } else if (selectedBackgroundAnimation === 'rain') {
+        ctx.fillStyle = "#050510";
+        ctx.fillRect(0, 0, camera.width, camera.height);
+        ctx.strokeStyle = "rgba(0, 255, 255, 0.5)";
+        ctx.lineWidth = 1;
+        const time = Date.now() * 0.8;
+        for (let i = 0; i < 100; i++) {
+            const x = (i * 37) % camera.width;
+            const y = (time + i * 50) % camera.height;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 2, y + 15); ctx.stroke();
+        }
+
+    } else if (selectedBackgroundAnimation === 'underwater') {
+        const g = ctx.createLinearGradient(0, 0, 0, camera.height);
+        g.addColorStop(0, "#006994"); g.addColorStop(1, "#001e33");
+        ctx.fillStyle = g; ctx.fillRect(0, 0, camera.width, camera.height);
+        // Bubbles
+        ctx.strokeStyle = "rgba(255,255,255,0.3)";
+        const time = Date.now() / 20;
+        for(let i=0; i<20; i++) {
+            const x = (i * 50 + Math.sin(time/50 + i)*20) % camera.width;
+            const y = (camera.height - (time + i*30) % camera.height);
+            ctx.beginPath(); ctx.arc(x, y, (i%5)+2, 0, Math.PI*2); ctx.stroke();
+        }
+
+    } else if (selectedBackgroundAnimation === 'cyberpunk') {
+        ctx.fillStyle = "#050510"; ctx.fillRect(0, 0, camera.width, camera.height);
+        const time = Date.now();
+        // Random Neon Shapes
+        if (Math.floor(time / 500) % 2 === 0) {
+            ctx.fillStyle = "rgba(0, 255, 255, 0.1)";
+            ctx.fillRect(100, 100, 50, 200);
+            ctx.fillStyle = "rgba(255, 0, 255, 0.1)";
+            ctx.fillRect(camera.width - 150, 50, 100, 300);
+        }
+        // Grid floor
+        ctx.strokeStyle = "cyan";
+        ctx.beginPath(); ctx.moveTo(0, camera.height-50); ctx.lineTo(camera.width, camera.height-50); ctx.stroke();
+
+    } else if (selectedBackgroundAnimation === 'forest') {
+        ctx.fillStyle = "#052e16"; ctx.fillRect(0, 0, camera.width, camera.height);
+        // Trees (Static silhouettes)
+        ctx.fillStyle = "#14532d";
+        for(let i=0; i<10; i++) {
+            const x = i * 100;
+            const h = 100 + (i%3)*30;
+            ctx.beginPath(); 
+            ctx.moveTo(x, camera.height); 
+            ctx.lineTo(x+30, camera.height-h); 
+            ctx.lineTo(x+60, camera.height); 
+            ctx.fill();
+        }
+
     } else {
         // Dynamic background color based on level
         const hue = (currentLevelIndex * 137) % 360; // Rotate hue for each level
@@ -2240,27 +3310,68 @@ function drawBackground() {
     backgroundLayers.forEach(layer => {
         if (!layer.img.complete || layer.img.naturalHeight === 0) return;
         const scrollX = (camera.x * layer.factor);
-        const x = - (scrollX % layer.img.width);
-        ctx.drawImage(layer.img, x, 0, layer.img.width, camera.height);
-        ctx.drawImage(layer.img, x + layer.img.width, 0, layer.img.width, camera.height);
+        const w = layer.img.width;
+        const h = camera.height;
+        const startX = - (scrollX % w);
+        
+        // Loop to fill the entire screen width (Fix for wide screens)
+        for (let x = startX; x < camera.width; x += w) {
+            ctx.drawImage(layer.img, x, 0, w, h);
+        }
     });
 }
 
-function loop() {
-  // The main game loop now acts as a state machine.
-  // It will only update the game logic when we are in the 'PLAYING' state.
+let lastTime = 0;
+const timeStep = 1000 / 60; // Target 60 FPS
+let accumulator = 0;
+
+function loop(timestamp) {
+  if (!timestamp) timestamp = performance.now(); // Safety check if called manually
+  if (!lastTime) lastTime = timestamp;
+  let deltaTime = timestamp - lastTime;
+  lastTime = timestamp;
+
+  // --- 10 Minute Ad Timer ---
   if (gameState === 'PLAYING') {
-    update();
+      timePlayed += deltaTime;
+      if (timePlayed >= TEN_MINUTES) {
+          timePlayed = 0; // Reset timer
+          // Pause game and show ad
+          gameState = 'PAUSED';
+          backgroundMusic.fadeOut(500);
+          if (touchControls) touchControls.classList.add('hidden');
+          
+          showInterstitialAd(() => {
+              // Resume game after ad
+              gameState = 'PLAYING';
+              if (touchControls && touchEnabled) {
+                  touchControls.classList.remove('hidden');
+              }
+              backgroundMusic.resume();
+          });
+      }
   }
-  
+
+  // Cap deltaTime to prevent spiral of death (e.g. if tab was inactive)
+  if (deltaTime > 100) deltaTime = 100;
+
+  accumulator += deltaTime;
+
+  let updated = false;
+  while (accumulator >= timeStep) {
+    if (gameState === 'PLAYING') {
+      update();
+      updated = true;
+    }
+    accumulator -= timeStep;
+  }
+
   draw();
 
-  // Draw overlay screens on top of the game
-  // Game Over / Won screens are now DOM elements, so no canvas drawing needed here
-  // START_SCREEN is now handled by DOM, so we don't draw text on canvas for it.
-
-  // Clear single-press keys at the end of the frame
-  justPressed = {};
+  // Only clear inputs if we actually updated the game logic or if we are not playing
+  if (updated || gameState !== 'PLAYING') {
+      justPressed = {};
+  }
 
   requestAnimationFrame(loop);
 }
@@ -2268,6 +3379,37 @@ function loop() {
 // Start the game loop
 // Stop any previous music and reset state when the script reloads
 backgroundMusic.stop();
+
+// --- Save Data Function (Prevents Reset on Update) ---
+function saveData() {
+    localStorage.setItem('dravexoHighScore', highScore);
+    localStorage.setItem('dravexoTotalCoins', totalCoins);
+    localStorage.setItem('dravexoMaxLevel', maxLevelReached);
+    localStorage.setItem('dravexoUnlockedCharacters', JSON.stringify(unlockedCharacters));
+    localStorage.setItem('dravexoUnlockedBackgrounds', JSON.stringify(unlockedBackgrounds));
+    localStorage.setItem('dravexoUnlockedLandColors', JSON.stringify(unlockedLandColors));
+    localStorage.setItem('dravexoSelectedCharacter', selectedCharacter);
+    localStorage.setItem('dravexoBackgroundAnimation', selectedBackgroundAnimation);
+    localStorage.setItem('dravexoLandColor', selectedLandColor);
+    localStorage.setItem('dravexoSoundEnabled', soundEnabled);
+    localStorage.setItem('dravexoTouchEnabled', touchEnabled);
+}
+
+// --- Fix: Stop Sound when Game is Minimized (Mobile Home/Tabs) ---
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        saveData(); // Save data immediately when app is minimized/closed
+        if (typeof backgroundMusic !== 'undefined') backgroundMusic.stop();
+        if (typeof homeMusic !== 'undefined') homeMusic.stop();
+    } else {
+        // Resume based on current state
+        if (gameState === 'START_SCREEN') {
+            if (typeof homeMusic !== 'undefined') homeMusic.resume();
+        } else if (gameState === 'PLAYING') {
+            if (typeof backgroundMusic !== 'undefined') backgroundMusic.resume();
+        }
+    }
+});
 
 // Initial Setup
 resizeGame(); // Set initial size
@@ -2278,18 +3420,265 @@ populateBackgroundAnimationSelect(); // Populate background animation options
 populateLevelSelect(); // Create level buttons
 gameState = 'START_SCREEN';
 showHomeScreen(); // Show the new Home Page
+showBannerAd(); // Initialize Banner Ad
 
-loop();
+requestAnimationFrame(loop);
+
+// --- Daily Reward Logic ---
+function checkDailyReward() {
+    const lastClaimDate = localStorage.getItem('dravexoLastClaimDate');
+    const storedStreak = parseInt(localStorage.getItem('dravexoDailyStreak')) || 0;
+    const now = new Date();
+    const todayStr = now.toDateString(); // e.g., "Mon Jan 01 2024"
+
+    dailyRewardPopup.classList.remove('hidden');
+
+    // Determine current state
+    let isClaimedToday = (lastClaimDate === todayStr);
+    let currentStreak = storedStreak;
+    
+    // Check if streak is broken (if not claimed today)
+    if (!isClaimedToday) {
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toDateString();
+        
+        if (lastClaimDate !== yesterdayStr) {
+            currentStreak = 0; // Reset if missed a day
+        }
+    }
+
+    // If not claimed today, the potential streak for today is current + 1
+    // If claimed today, the streak is just currentStreak
+    const displayStreak = isClaimedToday ? currentStreak : currentStreak + 1;
+    
+    // Generate Grid
+    const grid = document.getElementById('daily-reward-grid');
+    grid.innerHTML = '';
+    
+    const rewards = [10, 25, 45, 75, 100, 500, 999];
+    
+    // Visual index of "Today" (0-6)
+    const todayIndex = (displayStreak - 1) % 7; 
+
+    // Streak Bonus: +50 coins for every full week of streak
+    const weeksCompleted = Math.floor((displayStreak - 1) / 7);
+    const streakBonus = weeksCompleted * 50;
+
+    rewards.forEach((amount, index) => {
+        const dayBox = document.createElement('div');
+        dayBox.className = 'reward-day-box';
+        
+        // Determine status
+        if (index < todayIndex) {
+            dayBox.classList.add('claimed');
+            dayBox.innerHTML = `<div style="font-size:12px;color:#aaa;">Day ${index + 1}</div><div class="reward-day-amount">✅</div>`;
+        } else if (index === todayIndex) {
+            if (isClaimedToday) {
+                dayBox.classList.add('claimed');
+                dayBox.innerHTML = `<div style="font-size:12px;color:#aaa;">Day ${index + 1}</div><div class="reward-day-amount">✅</div>`;
+            } else {
+                dayBox.classList.add('active');
+                dayBox.innerHTML = `<div style="font-size:12px;color:#fff;">Day ${index + 1}</div><div class="reward-day-amount">${amount}</div>`;
+            }
+        } else {
+            dayBox.innerHTML = `<div style="font-size:12px;color:#aaa;">Day ${index + 1}</div><div class="reward-day-amount">${amount}</div>`;
+        }
+        
+        grid.appendChild(dayBox);
+    });
+
+    // Button Logic
+    if (isClaimedToday) {
+        dailyRewardMessage.innerText = "Come back tomorrow!";
+        claimRewardBtn.classList.add('hidden');
+    } else {
+        const baseReward = rewards[todayIndex];
+        const totalReward = baseReward + streakBonus;
+
+        if (streakBonus > 0) {
+            dailyRewardMessage.innerText = `Day ${todayIndex + 1} + Streak Bonus (+${streakBonus})`;
+        } else {
+            dailyRewardMessage.innerText = `Day ${todayIndex + 1} Reward Available!`;
+        }
+
+        claimRewardBtn.innerText = "📺 CLAIM " + totalReward;
+        claimRewardBtn.classList.remove('hidden');
+        
+        claimRewardBtn.onclick = () => {
+            claimRewardBtn.disabled = true;
+            claimRewardBtn.innerText = "LOADING...";
+
+            // Show Ad first, then give reward
+            showRewardedAd(() => {
+                playSound(coinSound);
+                totalCoins += totalReward;
+                localStorage.setItem('dravexoTotalCoins', totalCoins);
+                localStorage.setItem('dravexoLastClaimDate', todayStr);
+                localStorage.setItem('dravexoDailyStreak', displayStreak);
+                
+                updateCurrencyDisplay();
+                
+                // Refresh UI to show claimed state
+                checkDailyReward();
+            });
+        };
+    }
+}
+
+if (dailyRewardBtn) {
+    dailyRewardBtn.addEventListener('click', () => {
+        playSound(uiClickSound);
+        checkDailyReward();
+    });
+}
+
+if (closeRewardBtn) closeRewardBtn.addEventListener('click', () => dailyRewardPopup.classList.add('hidden'));
+
+if (dailyRewardCloseX) dailyRewardCloseX.addEventListener('click', () => {
+    playSound(uiClickSound);
+    dailyRewardPopup.classList.add('hidden');
+});
+
+// --- AdMob / Ads Logic ---
+const ADMOB_APP_ID = 'ca-app-pub-8372917146289765~5049470363'; // App ID
+const ADMOB_AD_UNIT_ID = 'ca-app-pub-8372917146289765/6343204884'; // Ad Unit ID (Ads)
+const ADMOB_REWARD_ID = 'ca-app-pub-8372917146289765/6343204884'; // Rewarded Ad ID (Revive/Skip)
+const ADMOB_BANNER_ID = 'ca-app-pub-8372917146289765/7216576504'; // Banner Ad ID
+
+// Call this function when you want to show an ad (e.g., before restarting or next level)
+function showInterstitialAd(callback) {
+    if (!checkInternetConnection()) {
+        // No internet, can't show ad. Just continue.
+        if (callback) callback();
+        return;
+    }
+
+    if (typeof AdMob !== 'undefined') {
+        // Real AdMob Call
+        AdMob.prepareInterstitial({ adId: ADMOB_AD_UNIT_ID, autoShow: true })
+            .then(() => { if(callback) callback(); })
+            .catch(e => { 
+                console.error("AdMob Error:", e); 
+                if(callback) callback(); 
+            });
+    } else {
+        console.log("AdMob not found (Browser Mode) - Skipping Ad");
+        if (callback) callback();
+    }
+}
+
+// --- Rewarded Ad Logic (Revive) ---
+function showRewardedAd(callback) {
+    if (!checkInternetConnection()) {
+        // No internet, can't show rewarded ad. Don't give reward.
+        // The popup is already shown by checkInternetConnection.
+        return; // Stop execution, don't call the callback.
+    }
+    
+    if (typeof AdMob !== 'undefined') {
+        // Real AdMob Call
+        AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARD_ID, autoShow: true })
+            .then(() => { if(callback) callback(); })
+            .catch(e => { 
+                console.error("AdMob Error:", e); 
+                if(callback) callback(); 
+            });
+    } else {
+        console.log("AdMob not found (Browser Mode) - Granting Reward");
+        if (callback) callback();
+    }
+}
+
+function showBannerAd() {
+    if (typeof AdMob !== 'undefined') {
+        AdMob.createBanner({ adId: ADMOB_BANNER_ID, position: AdMob.AD_POSITION.TOP_CENTER, autoShow: true });
+    }
+}
 
 // --- Game Over / Win Button Logic ---
 restartBtn.addEventListener('click', () => {
     playSound(uiClickSound);
     gameOverScreen.classList.add('hidden');
     gameState = 'PLAYING';
-    reset(true); // Restart  
-    backgroundMusic.play();
-    window.focus();
+    
+    // Show Ad before restarting
+    showInterstitialAd(() => {
+        reset(true); // Restart  
+        backgroundMusic.play();
+        window.focus();
+    });
 });
+
+// Revive Button Click
+if (reviveBtn) {
+    reviveBtn.addEventListener('click', () => {
+        playSound(uiClickSound);
+        
+        showRewardedAd(() => {
+            // Revive Logic
+            gameState = 'PLAYING';
+            gameOverScreen.classList.add('hidden');
+            gameUI.classList.remove('hidden');
+            pauseBtn.classList.remove('hidden');
+            
+            // FIX: Show touch controls again
+            if (touchControls && touchEnabled) {
+                touchControls.classList.remove('hidden');
+            }
+
+            // Respawn at last checkpoint/start
+            player.x = respawnPoint.x;
+            player.y = respawnPoint.y;
+            player.dy = 0;
+            player.dx = 0;
+            player.invincible = true; // Give temporary invincibility
+            player.invincibleTimer = 120; // 2 seconds
+            
+            backgroundMusic.play();
+            window.focus();
+        });
+    });
+}
+
+// Skip Level Button Click
+if (skipLevelBtn) {
+    skipLevelBtn.addEventListener('click', () => {
+        playSound(uiClickSound);
+        
+        // Show Ad before skipping
+        showRewardedAd(() => {
+            consecutiveLosses = 0; // Reset losses
+            currentLevelIndex++;
+            
+            // Unlock next level
+            if (currentLevelIndex > maxLevelReached) {
+                maxLevelReached = currentLevelIndex;
+                localStorage.setItem('dravexoMaxLevel', maxLevelReached);
+                populateLevelSelect();
+            }
+
+            if (currentLevelIndex < levels.length) {
+                loadLevel(currentLevelIndex);
+                gameState = 'PLAYING';
+                gameOverScreen.classList.add('hidden');
+                gameUI.classList.remove('hidden');
+                pauseBtn.classList.remove('hidden');
+                
+                // FIX: Show touch controls again
+                if (touchControls && touchEnabled) {
+                    touchControls.classList.remove('hidden');
+                }
+
+                backgroundMusic.play();
+            } else {
+                // Game Won (if skipped last level)
+                gameState = 'GAME_WON';
+                showGameOverMenu(true);
+            }
+        });
+    });
+}
 
 homeBtn.addEventListener('click', () => {
     playSound(uiClickSound);
@@ -2305,8 +3694,12 @@ nextLevelBtn.addEventListener('click', () => {
     gameState = 'PLAYING';
     gameUI.classList.remove('hidden');
     pauseBtn.classList.remove('hidden');
-    loadLevel(currentLevelIndex);
-    backgroundMusic.play();
+    
+    // Show Ad before next level
+    showInterstitialAd(() => {
+        loadLevel(currentLevelIndex);
+        backgroundMusic.play();
+    });
 });
 
 levelHomeBtn.addEventListener('click', () => {
@@ -2339,7 +3732,10 @@ resumeBtn.addEventListener('click', () => {
 pauseRestartBtn.addEventListener('click', () => {
     playSound(uiClickSound);
     pauseMenu.classList.add('hidden');
-    reset(true); // Restart current level
+    
+    showInterstitialAd(() => {
+        reset(true); // Restart current level
+    });
 });
 
 pauseHomeBtn.addEventListener('click', () => {
@@ -2353,21 +3749,20 @@ pauseHomeBtn.addEventListener('click', () => {
 startBtn.addEventListener('click', () => {
     playSound(uiClickSound);
     // Force landscape mode on mobile
-    if (screen.orientation && screen.orientation.lock) {
-        if (document.documentElement.requestFullscreen) {
-            document.documentElement.requestFullscreen().catch(() => {});
-        }
-        screen.orientation.lock('landscape').catch(() => {});
+    forceLandscape();
+
+    // Auto-show tutorial for first-time players
+    if (!localStorage.getItem('dravexoTutorialSeen')) {
+        tutorialScreen.classList.remove('hidden');
+        localStorage.setItem('dravexoTutorialSeen', 'true');
+        return; // Stop here so user sees tutorial first. They will click PLAY again after closing.
     }
     
     homeScreen.classList.add('hidden');
 
-    // Open Session 1 Level Select Screen directly
-    currentSessionStart = 0;
-    currentSessionEnd = 20;
-    document.querySelector('#level-select-screen h2').innerText = "SESSION 1";
-    populateLevelSelect();
-    levelSelectScreen.classList.remove('hidden');
+    // Open Session Select Screen
+    updateSessionButtons(); // Ensure locks are correct
+    sessionSelectScreen.classList.remove('hidden');
 });
 
 function setupTouchControls() {
@@ -2417,3 +3812,63 @@ function setupTouchControls() {
 
 // Set up touch listeners when the script loads
 setupTouchControls();
+
+// --- Auto-Rotate / Force Landscape Logic ---
+async function forceLandscape() {
+    // On many devices, orientation lock only works in fullscreen mode.
+    // We must request fullscreen following a user interaction (like a tap).
+    try {
+        if (document.documentElement.requestFullscreen) {
+            await document.documentElement.requestFullscreen();
+        }
+        // Once in fullscreen, we can try to lock the orientation.
+        if (screen.orientation && screen.orientation.lock) {
+            await screen.orientation.lock('landscape');
+        }
+    } catch (err) {
+        console.warn("Could not enter fullscreen or lock orientation:", err);
+    }
+}
+
+// Trigger rotation on first interaction (Touch or Click anywhere)
+window.addEventListener('click', () => {
+    forceLandscape();
+    // Ensure correct music starts on first interaction
+    if (gameState === 'START_SCREEN') homeMusic.resume();
+    else backgroundMusic.resume();
+}, { once: true });
+window.addEventListener('touchstart', () => {
+    forceLandscape();
+    // Ensure correct music starts on first interaction
+    if (gameState === 'START_SCREEN') homeMusic.resume();
+    else backgroundMusic.resume();
+}, { once: true });
+
+// Try to force landscape immediately
+forceLandscape();
+
+// --- Internet Connection Check ---
+const internetPopup = document.getElementById('internet-popup');
+const closeInternetBtn = document.getElementById('close-internet-btn');
+
+function checkInternetConnection() {
+    const isOnline = navigator.onLine;
+    if (!isOnline) {
+        if (internetPopup) internetPopup.classList.remove('hidden');
+    } else {
+        if (internetPopup) internetPopup.classList.add('hidden');
+    }
+    return isOnline;
+}
+
+window.addEventListener('online', checkInternetConnection);
+window.addEventListener('offline', checkInternetConnection);
+
+if (closeInternetBtn) {
+    closeInternetBtn.addEventListener('click', () => {
+        if (internetPopup) internetPopup.classList.add('hidden');
+    });
+}
+
+// Check on startup
+checkInternetConnection();
