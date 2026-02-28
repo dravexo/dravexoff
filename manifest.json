@@ -1,0 +1,25 @@
+{
+  "name": "Dravexo: Pixel Bot",
+  "short_name": "Dravexo",
+  "description": "An epic pixel art platformer game with boss fights, multiple levels, and custom characters.",
+  "categories": ["games", "entertainment", "action", "platformer"],
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "background_color": "#202028",
+  "theme_color": "#f1c40f",
+  "orientation": "landscape",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
