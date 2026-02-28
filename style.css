@@ -320,51 +320,6 @@ canvas {
   order: 0; /* Reset order */
 }
 
-#settings-icon-btn:hover {
-  transform: scale(1.05);
-}
-
-/* Watch Ad Button */
-#watch-ad-btn {
-  position: relative;
-  transform: none;
-  width: auto;
-  padding: 8px 15px;
-  font-size: 14px;
-  font-family: 'Arial Black', sans-serif;
-  text-transform: uppercase;
-  background: #e74c3c; /* Red */
-  color: white;
-  border: none;
-  border-radius: 20px;
-  border-bottom: 4px solid #c0392b;
-  cursor: pointer;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-  transition: transform 0.2s;
-  margin: 0;
-  z-index: 105;
-  order: 3; /* Place next to Reward button */
-}
-
-#watch-ad-btn:hover {
-  transform: translateY(-2px);
-}
-
-#watch-ad-btn:active {
-  transform: translateY(4px);
-  border-bottom-width: 2px;
-  box-shadow: none;
-}
-
-/* Disabled State for Ad Button */
-#watch-ad-btn:disabled {
-  background: #7f8c8d;
-  border-bottom: 4px solid #95a5a6;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
 /* Session 2 Button */
 #session2-btn {
   width: 280px;
@@ -631,13 +586,12 @@ canvas {
 }
 
 .slider {
-  position: absoluteab
+  position: absolute;
 }
 
 input:checked + .slider {
   background-color: #2196F3;
 }
-
 input:focus + .slider {
   box-shadow: 0 0 1px #2196F3;
 }
@@ -1213,19 +1167,13 @@ input:checked + .slider:before {
   cursor: pointer;
   font-size: 18px;
 }
-/* Revive Button Style */
-#revive-btn {
-  background: #9b59b6; /* Purple */
-  border: 2px solid #8e44ad;
-}
-
 /* Skip Level Button Style */
 #skip-level-btn {
   background: #1abc9c; /* Teal */
   border: 2px solid #16a085;
 }
 
-#restart-btn:hover, #home-btn:hover, #next-level-btn:hover, #level-home-btn:hover, #revive-btn:hover, #skip-level-btn:hover {
+#restart-btn:hover, #home-btn:hover, #next-level-btn:hover, #level-home-btn:hover, #skip-level-btn:hover {
   transform: scale(1.05);
 }
 
@@ -1321,7 +1269,7 @@ input:checked + .slider:before {
   font-size: 24px;
   outline: none;
   cursor: pointer;
-  touch-action: manipulation;
+  touch-action: none; /* Fix: Prevent all browser gestures on buttons */
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -1360,18 +1308,6 @@ input:checked + .slider:before {
     justify-content: center;
   }
   .reward-text {
-    display: none; /* Hide text on mobile */
-  }
-  #watch-ad-btn {
-    padding: 8px;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .ad-text {
     display: none; /* Hide text on mobile */
   }
 }
@@ -1784,7 +1720,7 @@ input:checked + .slider:before {
 #confirm-yes-btn { background: #2ecc71; }
 #confirm-no-btn { background: #e74c3c; }
 
-.confirm-buttons {
+confirm-buttons {
   display: flex;
   gap: 20px;
 }

@@ -15,8 +15,6 @@ let stars = [];
 let shakeDuration = 0;
 let shakeIntensity = 0;
 let floatingTexts = [];
-let timePlayed = 0; // For 10-min ad timer
-const TEN_MINUTES = 600000; // 10 minutes in milliseconds
 
 // --- Sprite / Image System ---
 const sprites = {};
@@ -109,7 +107,6 @@ const homeScreen = document.getElementById('home-screen');
 const startBtn = document.getElementById('start-btn');
 const newGameBtn = document.getElementById('new-game-btn');
 const characterBtn = document.getElementById('character-btn');
-const watchAdBtn = document.getElementById('watch-ad-btn');
 const session1Btn = document.getElementById('session1-btn');
 const session2Btn = document.getElementById('session2-btn');
 const session3Btn = document.getElementById('session3-btn');
@@ -117,7 +114,6 @@ const session4Btn = document.getElementById('session4-btn');
 const session5Btn = document.getElementById('session5-btn');
 const sessionSelectScreen = document.getElementById('session-select-screen');
 const closeSessionsBtn = document.getElementById('close-sessions-btn');
-const highScoreDisplay = document.getElementById('ui-highscore');
 const totalCoinsDisplay = document.getElementById('total-coins-display');
 const dailyRewardBtn = document.getElementById('daily-reward-btn');
 const dailyRewardPopup = document.getElementById('daily-reward-popup');
@@ -126,7 +122,6 @@ const closeRewardBtn = document.getElementById('close-reward-btn');
 const dailyRewardCloseX = document.getElementById('daily-reward-close-x');
 const dailyRewardMessage = document.getElementById('daily-reward-message');
 const gameUI = document.getElementById('game-ui');
-const hudScore = document.getElementById('hud-score');
 const hudLevel = document.getElementById('hud-level');
 const touchControls = document.getElementById('touch-controls');
 const settingsMenu = document.getElementById('settings-menu');
@@ -138,10 +133,6 @@ const volumeSlider = document.getElementById('volume-slider');
 const touchToggle = document.getElementById('touch-toggle');
 const graphicsToggle = document.getElementById('graphics-toggle');
 const musicVolumeSlider = document.getElementById('music-volume-slider');
-const customJumpInput = document.getElementById('custom-jump');
-const customDeathInput = document.getElementById('custom-death');
-const customCoinInput = document.getElementById('custom-coin');
-const customMusicInput = document.getElementById('custom-music');
 const tutorialBtn = document.getElementById('tutorial-btn');
 const editControlsBtn = document.getElementById('edit-controls-btn');
 const editUI = document.getElementById('edit-ui');
@@ -151,8 +142,6 @@ const controlSizeSlider = document.getElementById('control-size-slider');
 const privacyBtn = document.getElementById('privacy-btn');
 const loadingScreen = document.getElementById('loading-screen');
 const loadingBar = document.getElementById('loading-bar');
-const privacyScreen = document.getElementById('privacy-screen');
-const closePrivacyBtn = document.getElementById('close-privacy-btn');
 const tutorialScreen = document.getElementById('tutorial-screen');
 const closeTutorialBtn = document.getElementById('close-tutorial'); // Add new UI elements for background animation selection
 const backgroundAnimationSelectContainer = document.getElementById('background-animation-select');
@@ -170,14 +159,11 @@ const closeCharacterBtn = document.getElementById('close-character-btn');
 const randomCharBtn = document.getElementById('random-char-btn');
 const closeLevelsBtn = document.getElementById('close-levels-btn');
 const levelCompleteScreen = document.getElementById('level-complete-screen');
-const levelScoreDisplay = document.getElementById('level-score-display');
 const nextLevelBtn = document.getElementById('next-level-btn');
 const levelHomeBtn = document.getElementById('level-home-btn');
 const gameOverScreen = document.getElementById('game-over-screen');
 const gameOverTitle = document.getElementById('game-over-title');
-const finalScoreDisplay = document.getElementById('final-score-display');
 const restartBtn = document.getElementById('restart-btn');
-const reviveBtn = document.getElementById('revive-btn'); // New Revive Button
 const skipLevelBtn = document.getElementById('skip-level-btn'); // New Skip Button
 const homeBtn = document.getElementById('home-btn');
 const pauseBtn = document.getElementById('pause-btn');
@@ -185,6 +171,9 @@ const pauseMenu = document.getElementById('pause-menu');
 const resumeBtn = document.getElementById('resume-btn');
 const pauseRestartBtn = document.getElementById('pause-restart-btn');
 const pauseHomeBtn = document.getElementById('pause-home-btn');
+const watchAdBtn = document.getElementById('watch-ad-btn');
+const highScoreDisplay = document.getElementById('high-score-display');
+let bgCache = document.createElement('canvas');
 let isEditingControls = false;
 let selectedEditButton = null; // Track which button is being resized
 
@@ -324,7 +313,6 @@ function showHomeScreen() {
     levelCompleteScreen.classList.add('hidden');
     gameUI.classList.add('hidden'); // Hide HUD on home screen
     pauseBtn.classList.add('hidden'); // Hide pause button on home screen
-    timePlayed = 0; // Reset ad timer
     if (touchControls) touchControls.classList.add('hidden');
     if (highScoreDisplay) highScoreDisplay.innerText = highScore;
     updateSessionButtons(); // Update session locks
@@ -352,12 +340,10 @@ function showGameOverMenu(win) {
     if (win) {
         gameOverTitle.innerText = "YOU WIN!";
         gameOverTitle.style.color = "gold";
-        if (reviveBtn) reviveBtn.classList.add('hidden'); // Hide revive on win
         if (skipLevelBtn) skipLevelBtn.classList.add('hidden'); // Hide skip on win
     } else {
         gameOverTitle.innerText = "GAME OVER";
         gameOverTitle.style.color = "#e74c3c";
-        if (reviveBtn) reviveBtn.classList.remove('hidden');
         
         // Show Skip Button if lost 3 or more times
         if (skipLevelBtn) {
@@ -652,16 +638,7 @@ function makeDraggable(btn) {
 if (privacyBtn) {
     privacyBtn.addEventListener('click', () => {
         playSound(uiClickSound);
-        settingsMenu.classList.add('hidden'); // Hide settings to show privacy clearly
-        privacyScreen.classList.remove('hidden');
-    });
-}
-
-if (closePrivacyBtn) {
-    closePrivacyBtn.addEventListener('click', () => {
-        playSound(uiClickSound);
-        privacyScreen.classList.add('hidden');
-        settingsMenu.classList.remove('hidden'); // Return to settings
+        window.location.href = 'privacy.html';
     });
 }
 
@@ -1350,66 +1327,15 @@ if (closeLandBtn) {
 
 // --- Watch Ad Button Logic ---
 function updateAdButton() {
-    if (!watchAdBtn) return;
-    let adWatchCount = parseInt(localStorage.getItem('dravexoAdWatchCount')) || 0;
-    const lastAdTime = parseInt(localStorage.getItem('dravexoLastAdWatchTime')) || 0;
-    const now = Date.now();
-    const cooldown = 300000; // 5 minutes in milliseconds
-
-    // If count is 3 or more, check cooldown
-    if (adWatchCount >= 3) {
-        const diff = now - lastAdTime;
-        if (diff < cooldown) {
-            const remaining = Math.ceil((cooldown - diff) / 1000);
-            const m = Math.floor(remaining / 60);
-            const s = remaining % 60;
-            const timeText = `${m}:${s.toString().padStart(2, '0')}`;
-            
-            watchAdBtn.innerHTML = `⏳ <span class="ad-text">${timeText}</span>`;
-            watchAdBtn.disabled = true;
-        } else {
-            // Cooldown over, reset count
-            localStorage.setItem('dravexoAdWatchCount', 0);
-            watchAdBtn.innerHTML = `📺 <span class="ad-text">GET 50 (3/3)</span>`;
-            watchAdBtn.disabled = false;
-        }
-    } else {
-        // User can watch ad
-        const left = 3 - adWatchCount;
-        watchAdBtn.innerHTML = `📺 <span class="ad-text">GET 50 (${left}/3)</span>`;
-        watchAdBtn.disabled = false;
+    if (watchAdBtn) {
+        watchAdBtn.style.display = 'none'; // Hide ad button for no-ads version
     }
 }
-
-// Update ad button every second
-setInterval(updateAdButton, 1000);
 
 if (watchAdBtn) {
     updateAdButton(); // Initial check
     watchAdBtn.addEventListener('click', () => {
         playSound(uiClickSound);
-        
-        // Double check cooldown
-        if (watchAdBtn.disabled) return;
-
-        showRewardedAd(() => {
-            totalCoins += 50;
-            localStorage.setItem('dravexoTotalCoins', totalCoins);
-            
-            // Update Count
-            let adWatchCount = parseInt(localStorage.getItem('dravexoAdWatchCount')) || 0;
-            adWatchCount++;
-            localStorage.setItem('dravexoAdWatchCount', adWatchCount);
-
-            // If 3rd ad, start cooldown
-            if (adWatchCount >= 3) {
-                localStorage.setItem('dravexoLastAdWatchTime', Date.now());
-            }
-
-            updateCurrencyDisplay();
-            updateAdButton(); // Update UI immediately
-            showMessage("REWARD", "You received 50 Coins!");
-        });
     });
 }
 
@@ -1860,43 +1786,6 @@ function generateStars() {
     }
 }
 
-// --- Custom Sound Logic ---
-function handleCustomSound(inputElement, soundVarName, isLoop = false) {
-    if (!inputElement) return;
-    inputElement.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const objectURL = URL.createObjectURL(file);
-            
-            // Special handling for background music to stop old track
-            if (soundVarName === 'backgroundMusic') {
-                backgroundMusic.stop();
-                backgroundMusic = createSound(objectURL, true, true);
-                if (gameState === 'PLAYING') {
-                    backgroundMusic.play();
-                }
-            } else if (soundVarName === 'jumpSound') {
-                jumpSound = createSound(objectURL, false);
-                jumpSound.play(); // Preview sound
-            } else if (soundVarName === 'deathSound') {
-                deathSound = createSound(objectURL, false);
-                deathSound.play(); // Preview sound
-            } else if (soundVarName === 'coinSound') {
-                coinSound = createSound(objectURL, false);
-                coinSound.play(); // Preview sound
-            }
-            
-            // Reset input so same file can be selected again if needed
-            // e.target.value = ''; 
-        }
-    });
-}
-
-handleCustomSound(customJumpInput, 'jumpSound');
-handleCustomSound(customDeathInput, 'deathSound');
-handleCustomSound(customCoinInput, 'coinSound');
-handleCustomSound(customMusicInput, 'backgroundMusic', true);
-
 // --- Image Loading ---
 let backgroundLayers = [];
 function createImage(src, factor) {
@@ -2005,7 +1894,6 @@ function reset(keepLevel = false) {
         currentLevelIndex = 0; // Reset to level 1
         consecutiveLosses = 0;
     }
-    timePlayed = 0; // Reset ad timer
     player.color = characters[selectedCharacter].color; // Set player color on reset
     gameState = 'PLAYING';
     pauseBtn.classList.remove('hidden'); // Show pause button when playing
@@ -2062,12 +1950,6 @@ function playerDie() {
     if (finalScore > highScore) {
         highScore = finalScore;
         localStorage.setItem('dravexoHighScore', highScore);
-    }
-
-    // Show Revive button only if it's a loss (not a win)
-    if (reviveBtn) {
-        // You can add logic here to hide it if they already revived once
-        reviveBtn.classList.remove('hidden'); 
     }
 
     showGameOverMenu(false);
@@ -3133,7 +3015,6 @@ function draw() {
 }
 
 // --- Background Optimization ---
-let bgCache = document.createElement('canvas');
 
 function updateBackgroundCache() {
     // Size the cache to match the logical camera size
@@ -3331,27 +3212,6 @@ function loop(timestamp) {
   let deltaTime = timestamp - lastTime;
   lastTime = timestamp;
 
-  // --- 10 Minute Ad Timer ---
-  if (gameState === 'PLAYING') {
-      timePlayed += deltaTime;
-      if (timePlayed >= TEN_MINUTES) {
-          timePlayed = 0; // Reset timer
-          // Pause game and show ad
-          gameState = 'PAUSED';
-          backgroundMusic.fadeOut(500);
-          if (touchControls) touchControls.classList.add('hidden');
-          
-          showInterstitialAd(() => {
-              // Resume game after ad
-              gameState = 'PLAYING';
-              if (touchControls && touchEnabled) {
-                  touchControls.classList.remove('hidden');
-              }
-              backgroundMusic.resume();
-          });
-      }
-  }
-
   // Cap deltaTime to prevent spiral of death (e.g. if tab was inactive)
   if (deltaTime > 100) deltaTime = 100;
 
@@ -3410,19 +3270,6 @@ document.addEventListener('visibilitychange', () => {
         }
     }
 });
-
-// Initial Setup
-resizeGame(); // Set initial size
-generateStars();
-loadLevel(0); // Load level 1 background
-populateCharacterSelect(); // Create character options
-populateBackgroundAnimationSelect(); // Populate background animation options
-populateLevelSelect(); // Create level buttons
-gameState = 'START_SCREEN';
-showHomeScreen(); // Show the new Home Page
-showBannerAd(); // Initialize Banner Ad
-
-requestAnimationFrame(loop);
 
 // --- Daily Reward Logic ---
 function checkDailyReward() {
@@ -3502,26 +3349,24 @@ function checkDailyReward() {
             dailyRewardMessage.innerText = `Day ${todayIndex + 1} Reward Available!`;
         }
 
-        claimRewardBtn.innerText = "📺 CLAIM " + totalReward;
+        claimRewardBtn.innerText = "CLAIM " + totalReward;
         claimRewardBtn.classList.remove('hidden');
         
         claimRewardBtn.onclick = () => {
             claimRewardBtn.disabled = true;
-            claimRewardBtn.innerText = "LOADING...";
+            claimRewardBtn.innerText = "CLAIMING...";
 
-            // Show Ad first, then give reward
-            showRewardedAd(() => {
-                playSound(coinSound);
-                totalCoins += totalReward;
-                localStorage.setItem('dravexoTotalCoins', totalCoins);
-                localStorage.setItem('dravexoLastClaimDate', todayStr);
-                localStorage.setItem('dravexoDailyStreak', displayStreak);
-                
-                updateCurrencyDisplay();
-                
-                // Refresh UI to show claimed state
-                checkDailyReward();
-            });
+            // Give reward immediately
+            playSound(coinSound);
+            totalCoins += totalReward;
+            localStorage.setItem('dravexoTotalCoins', totalCoins);
+            localStorage.setItem('dravexoLastClaimDate', todayStr);
+            localStorage.setItem('dravexoDailyStreak', displayStreak);
+            
+            updateCurrencyDisplay();
+            
+            // Refresh UI to show claimed state
+            checkDailyReward();
         };
     }
 }
@@ -3540,83 +3385,34 @@ if (dailyRewardCloseX) dailyRewardCloseX.addEventListener('click', () => {
     dailyRewardPopup.classList.add('hidden');
 });
 
-// --- AdMob / Ads Logic ---
-const ADMOB_APP_ID = 'ca-app-pub-8372917146289765~5049470363'; // App ID
-const ADMOB_AD_UNIT_ID = 'ca-app-pub-8372917146289765/6343204884'; // Ad Unit ID (Ads)
-const ADMOB_REWARD_ID = 'ca-app-pub-8372917146289765/6343204884'; // Rewarded Ad ID (Revive/Skip)
-const ADMOB_BANNER_ID = 'ca-app-pub-8372917146289765/7216576504'; // Banner Ad ID
-
-// Call this function when you want to show an ad (e.g., before restarting or next level)
-function showInterstitialAd(callback) {
-    if (!checkInternetConnection()) {
-        // No internet, can't show ad. Just continue.
-        if (callback) callback();
-        return;
-    }
-
-    if (typeof AdMob !== 'undefined') {
-        // Real AdMob Call
-        AdMob.prepareInterstitial({ adId: ADMOB_AD_UNIT_ID, autoShow: true })
-            .then(() => { if(callback) callback(); })
-            .catch(e => { 
-                console.error("AdMob Error:", e); 
-                if(callback) callback(); 
-            });
-    } else {
-        console.log("AdMob not found (Browser Mode) - Skipping Ad");
-        if (callback) callback();
-    }
-}
-
-// --- Rewarded Ad Logic (Revive) ---
-function showRewardedAd(callback) {
-    if (!checkInternetConnection()) {
-        // No internet, can't show rewarded ad. Don't give reward.
-        // The popup is already shown by checkInternetConnection.
-        return; // Stop execution, don't call the callback.
-    }
-    
-    if (typeof AdMob !== 'undefined') {
-        // Real AdMob Call
-        AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARD_ID, autoShow: true })
-            .then(() => { if(callback) callback(); })
-            .catch(e => { 
-                console.error("AdMob Error:", e); 
-                if(callback) callback(); 
-            });
-    } else {
-        console.log("AdMob not found (Browser Mode) - Granting Reward");
-        if (callback) callback();
-    }
-}
-
-function showBannerAd() {
-    if (typeof AdMob !== 'undefined') {
-        AdMob.createBanner({ adId: ADMOB_BANNER_ID, position: AdMob.AD_POSITION.TOP_CENTER, autoShow: true });
-    }
-}
-
 // --- Game Over / Win Button Logic ---
 restartBtn.addEventListener('click', () => {
     playSound(uiClickSound);
     gameOverScreen.classList.add('hidden');
     gameState = 'PLAYING';
     
-    // Show Ad before restarting
-    showInterstitialAd(() => {
-        reset(true); // Restart  
-        backgroundMusic.play();
-        window.focus();
-    });
+    reset(true); // Restart  
+    backgroundMusic.play();
+    window.focus();
 });
 
-// Revive Button Click
-if (reviveBtn) {
-    reviveBtn.addEventListener('click', () => {
+// Skip Level Button Click
+if (skipLevelBtn) {
+    skipLevelBtn.addEventListener('click', () => {
         playSound(uiClickSound);
         
-        showRewardedAd(() => {
-            // Revive Logic
+        consecutiveLosses = 0; // Reset losses
+        currentLevelIndex++;
+        
+        // Unlock next level
+        if (currentLevelIndex > maxLevelReached) {
+            maxLevelReached = currentLevelIndex;
+            localStorage.setItem('dravexoMaxLevel', maxLevelReached);
+            populateLevelSelect();
+        }
+
+        if (currentLevelIndex < levels.length) {
+            loadLevel(currentLevelIndex);
             gameState = 'PLAYING';
             gameOverScreen.classList.add('hidden');
             gameUI.classList.remove('hidden');
@@ -3627,56 +3423,12 @@ if (reviveBtn) {
                 touchControls.classList.remove('hidden');
             }
 
-            // Respawn at last checkpoint/start
-            player.x = respawnPoint.x;
-            player.y = respawnPoint.y;
-            player.dy = 0;
-            player.dx = 0;
-            player.invincible = true; // Give temporary invincibility
-            player.invincibleTimer = 120; // 2 seconds
-            
             backgroundMusic.play();
-            window.focus();
-        });
-    });
-}
-
-// Skip Level Button Click
-if (skipLevelBtn) {
-    skipLevelBtn.addEventListener('click', () => {
-        playSound(uiClickSound);
-        
-        // Show Ad before skipping
-        showRewardedAd(() => {
-            consecutiveLosses = 0; // Reset losses
-            currentLevelIndex++;
-            
-            // Unlock next level
-            if (currentLevelIndex > maxLevelReached) {
-                maxLevelReached = currentLevelIndex;
-                localStorage.setItem('dravexoMaxLevel', maxLevelReached);
-                populateLevelSelect();
-            }
-
-            if (currentLevelIndex < levels.length) {
-                loadLevel(currentLevelIndex);
-                gameState = 'PLAYING';
-                gameOverScreen.classList.add('hidden');
-                gameUI.classList.remove('hidden');
-                pauseBtn.classList.remove('hidden');
-                
-                // FIX: Show touch controls again
-                if (touchControls && touchEnabled) {
-                    touchControls.classList.remove('hidden');
-                }
-
-                backgroundMusic.play();
-            } else {
-                // Game Won (if skipped last level)
-                gameState = 'GAME_WON';
-                showGameOverMenu(true);
-            }
-        });
+        } else {
+            // Game Won (if skipped last level)
+            gameState = 'GAME_WON';
+            showGameOverMenu(true);
+        }
     });
 }
 
@@ -3695,11 +3447,8 @@ nextLevelBtn.addEventListener('click', () => {
     gameUI.classList.remove('hidden');
     pauseBtn.classList.remove('hidden');
     
-    // Show Ad before next level
-    showInterstitialAd(() => {
-        loadLevel(currentLevelIndex);
-        backgroundMusic.play();
-    });
+    loadLevel(currentLevelIndex);
+    backgroundMusic.play();
 });
 
 levelHomeBtn.addEventListener('click', () => {
@@ -3733,9 +3482,7 @@ pauseRestartBtn.addEventListener('click', () => {
     playSound(uiClickSound);
     pauseMenu.classList.add('hidden');
     
-    showInterstitialAd(() => {
-        reset(true); // Restart current level
-    });
+    reset(true); // Restart current level
 });
 
 pauseHomeBtn.addEventListener('click', () => {
@@ -3789,6 +3536,8 @@ function setupTouchControls() {
       // Touch events
       btn.addEventListener('touchstart', e => handleInput(e, key, true), { passive: false });
       btn.addEventListener('touchend', e => handleInput(e, key, false), { passive: false });
+      btn.addEventListener('touchcancel', e => handleInput(e, key, false), { passive: false }); // Fix: Handle interruptions
+      btn.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); }, false); // Fix: No right-click menu
       
       // Mouse events (for desktop testing)
       btn.addEventListener('mousedown', e => handleInput(e, key, true));
@@ -3844,8 +3593,17 @@ window.addEventListener('touchstart', () => {
     else backgroundMusic.resume();
 }, { once: true });
 
-// Try to force landscape immediately
-forceLandscape();
+// --- Auto-Enable Touch Controls on Mobile ---
+window.addEventListener('touchstart', () => {
+    if (!touchEnabled) {
+        touchEnabled = true;
+        localStorage.setItem('dravexoTouchEnabled', true);
+        if (gameState === 'PLAYING' && touchControls) {
+            touchControls.classList.remove('hidden');
+        }
+        if (touchToggle) touchToggle.checked = true;
+    }
+}, { passive: true });
 
 // --- Internet Connection Check ---
 const internetPopup = document.getElementById('internet-popup');
@@ -3872,3 +3630,15 @@ if (closeInternetBtn) {
 
 // Check on startup
 checkInternetConnection();
+
+// --- Initial Setup (Moved to end to ensure all functions are defined) ---
+resizeGame(); // Set initial size
+generateStars();
+loadLevel(0); // Load level 1 background
+populateCharacterSelect(); // Create character options
+populateBackgroundAnimationSelect(); // Populate background animation options
+populateLevelSelect(); // Create level buttons
+gameState = 'START_SCREEN';
+showHomeScreen(); // Show the new Home Page
+
+requestAnimationFrame(loop);

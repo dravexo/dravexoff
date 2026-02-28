@@ -36,7 +36,6 @@
       <span id="total-coins-display">0</span>
     </div>
     <button id="daily-reward-btn">🎁 <span class="reward-text">REWARD</span></button>
-    <button id="watch-ad-btn">📺 <span class="ad-text">GET 50</span></button>
   </div>
 
   <!-- Side Buttons Container -->
@@ -103,25 +102,6 @@
       <input type="range" id="music-volume-slider" min="0" max="1" step="0.1" value="0.5">
     </div>
     
-    <!-- Custom Sounds Section -->
-    <h3 class="hanger-title" style="margin-top: 20px;">CUSTOM SOUNDS (MP3/WAV)</h3>
-    <div class="setting-row">
-      <label>Jump:</label>
-      <input type="file" id="custom-jump" accept="audio/*">
-    </div>
-    <div class="setting-row">
-      <label>Game Over:</label>
-      <input type="file" id="custom-death" accept="audio/*">
-    </div>
-    <div class="setting-row">
-      <label>Coin:</label>
-      <input type="file" id="custom-coin" accept="audio/*">
-    </div>
-    <div class="setting-row">
-      <label>Music:</label>
-      <input type="file" id="custom-music" accept="audio/*">
-    </div>
-
     <!-- Edit Controls Button -->
     <button id="edit-controls-btn" style="margin-top: 15px; background-color: #8e44ad;">EDIT TOUCH CONTROLS</button>
 
@@ -140,16 +120,6 @@
     <button id="close-tutorial">CLOSE</button>
   </div>
 
-  <!-- Privacy Policy Screen -->
-  <div id="privacy-screen" class="hidden">
-    <h2>PRIVACY POLICY</h2>
-    <div class="privacy-content" style="text-align: left; margin-bottom: 20px; color: #ddd; font-size: 14px; line-height: 1.6;">
-        <p><strong>Data Collection:</strong> This game stores your progress (levels, high score, settings) locally on your device using LocalStorage.</p>
-        <p><strong>Third Parties:</strong> No personal data is collected, transmitted, or shared with third parties.</p>
-        <p><strong>Contact:</strong> This is a fan-made game. Enjoy!</p>
-    </div>
-    <button id="close-privacy-btn">CLOSE</button>
-  </div>
 </div>
 
 <!-- Internet Check Popup -->
@@ -238,7 +208,6 @@
 <div id="game-over-screen" class="hidden">
   <h1 id="game-over-title">GAME OVER</h1>
   <div class="game-over-buttons">
-    <button id="revive-btn">📺 REVIVE</button>
     <button id="skip-level-btn" class="hidden">⏭ SKIP LEVEL</button>
     <button id="home-btn">HOME</button>
     <button id="restart-btn">RESTART GAME</button>
