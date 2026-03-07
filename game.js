@@ -2,12 +2,21 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 let gameState = 'START_SCREEN'; // Can be: START_SCREEN, PLAYING, GAME_OVER, GAME_WON
 
-let selectedCharacter = localStorage.getItem('dravexoSelectedCharacter') || 'cyan';
-let unlockedCharacters = JSON.parse(localStorage.getItem('dravexoUnlockedCharacters')) || ['cyan'];
-let currentLevelIndex = parseInt(localStorage.getItem('dravexoCurrentLevel')) || 0;
+// --- Consolidated Save Data ---
+saveData = JSON.parse(localStorage.getItem('dravexoSaveData')) || {};
 
-let touchEnabled = localStorage.getItem('dravexoTouchEnabled') !== 'false'; // Default to true
-let maxLevelReached = parseInt(localStorage.getItem('dravexoMaxLevel')) || 0;
+// Migration for old keys (if new data is empty but old exists)
+if (Object.keys(saveData).length === 0 && localStorage.getItem('dravexoHighScore')) {
+    saveData.highScore = parseInt(localStorage.getItem('dravexoHighScore')) || 0;
+    saveData.totalCoins = parseInt(localStorage.getItem('dravexoTotalCoins')) || 0;
+    // ... migrate other keys if needed, or just start fresh with consolidated system
+}
+
+let selectedCharacter = saveData.selectedCharacter || 'cyan';
+let unlockedCharacters = saveData.unlockedCharacters || ['cyan'];
+let currentLevelIndex = parseInt(saveData.currentLevel) || 0;
+let touchEnabled = saveData.touchEnabled !== false; // Default true if not explicitly false
+let maxLevelReached = parseInt(saveData.maxLevel) || 0;
 let initialEnemies = [];
 let consecutiveLosses = 0; // Track losses on the same level
 let initialCoins = [];
@@ -18,30 +27,41 @@ let floatingTexts = [];
 
 // --- Sprite / Image System ---
 const sprites = {};
+const spritePromises = [];
+
 function loadSprite(key, src) {
-    const img = new Image();
-    img.src = src;
-    sprites[key] = img;
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = src;
+        img.onload = () => {
+            sprites[key] = img;
+            resolve(img);
+        };
+        img.onerror = () => {
+            console.warn(`Failed to load sprite: ${src}`); // Don't reject, just warn
+            resolve(null); // Resolve anyway to avoid blocking game
+        };
+    });
 }
 
 // Load Sprites (Apni photos assets folder mein daalein aur naam match karein)
 // Player Skins
-loadSprite('player_cyan', 'player_cyan.png');
-loadSprite('player_green', 'player_green.png');
-loadSprite('player_walker', 'player_walker.png');
-loadSprite('player_purple', 'player_purple.png');
-loadSprite('player_orange', 'player_orange.png');
-loadSprite('player_red', 'player_red.png');
-loadSprite('player_gold', 'player_gold.png');
-loadSprite('player_dark', 'player_dark.png');
-loadSprite('player_flyer', 'player_flyer.png');
-loadSprite('player_shooter', 'player_shooter.png');
-loadSprite('player_boss', 'player_boss.png');
+spritePromises.push(loadSprite('player_cyan', 'player_cyan.png'));
+spritePromises.push(loadSprite('player_green', 'player_green.png'));
+spritePromises.push(loadSprite('player_walker', 'player_walker.png'));
+spritePromises.push(loadSprite('player_purple', 'player_purple.png'));
+spritePromises.push(loadSprite('player_orange', 'player_orange.png'));
+spritePromises.push(loadSprite('player_red', 'player_red.png'));
+spritePromises.push(loadSprite('player_gold', 'player_gold.png'));
+spritePromises.push(loadSprite('player_dark', 'player_dark.png'));
+spritePromises.push(loadSprite('player_flyer', 'player_flyer.png'));
+spritePromises.push(loadSprite('player_shooter', 'player_shooter.png'));
+spritePromises.push(loadSprite('player_boss', 'player_boss.png'));
 // Enemies
-loadSprite('enemy_patrol', 'enemy_patrol.png');
-loadSprite('enemy_fly', 'enemy_fly.png');
-loadSprite('enemy_shooter', 'enemy_shooter.png');
-loadSprite('enemy_boss', 'enemy_boss.png');
+spritePromises.push(loadSprite('enemy_patrol', 'enemy_patrol.png'));
+spritePromises.push(loadSprite('enemy_fly', 'enemy_fly.png'));
+spritePromises.push(loadSprite('enemy_shooter', 'enemy_shooter.png'));
+spritePromises.push(loadSprite('enemy_boss', 'enemy_boss.png'));
 
 // Game constants
 const GRAVITY = 0.5;
@@ -59,7 +79,7 @@ let camera = {
   y: 0,
   width: 800,
   height: 400,
-  lerpFactor: 0.08 // A smaller value gives smoother camera movement
+  lerpFactor: 0.15 // Improved camera speed for mobile
 };
 
 let lastSafePos = { x: 50, y: 300 }; // Track last safe ground position
@@ -95,12 +115,12 @@ let player = {
 
 // Load saved settings from localStorage
 let score = 0;
-let highScore = localStorage.getItem('dravexoHighScore') || 0;
-let totalCoins = parseInt(localStorage.getItem('dravexoTotalCoins')) || 0;
-let selectedBackgroundAnimation = localStorage.getItem('dravexoBackgroundAnimation') || 'indianGradient'; // Default background
-let unlockedBackgrounds = JSON.parse(localStorage.getItem('dravexoUnlockedBackgrounds')) || ['indianGradient'];
-let selectedLandColor = localStorage.getItem('dravexoLandColor') || 'default';
-let unlockedLandColors = JSON.parse(localStorage.getItem('dravexoUnlockedLandColors')) || ['default'];
+let highScore = parseInt(saveData.highScore) || 0;
+let totalCoins = parseInt(saveData.totalCoins) || 0;
+let selectedBackgroundAnimation = saveData.backgroundAnimation || 'indianGradient';
+let unlockedBackgrounds = saveData.unlockedBackgrounds || ['indianGradient'];
+let selectedLandColor = saveData.landColor || 'default';
+let unlockedLandColors = saveData.unlockedLandColors || ['default'];
 
 // --- UI Elements ---
 const homeScreen = document.getElementById('home-screen');
@@ -168,6 +188,8 @@ const skipLevelBtn = document.getElementById('skip-level-btn'); // New Skip Butt
 const homeBtn = document.getElementById('home-btn');
 const pauseBtn = document.getElementById('pause-btn');
 const pauseMenu = document.getElementById('pause-menu');
+const clickToStartScreen = document.getElementById('click-to-start-screen');
+const realStartBtn = document.getElementById('real-start-btn');
 const resumeBtn = document.getElementById('resume-btn');
 const pauseRestartBtn = document.getElementById('pause-restart-btn');
 const pauseHomeBtn = document.getElementById('pause-home-btn');
@@ -219,10 +241,9 @@ function resizeGame() {
 }
 window.addEventListener('resize', resizeGame);
 
-function playSound(sound) {
-    if (soundEnabled) {
-        sound.play();
-    }
+// --- Save Data Function ---
+function saveGameData() {
+    localStorage.setItem('dravexoSaveData', JSON.stringify(saveData));
 }
 
 function updateCurrencyDisplay() {
@@ -246,20 +267,28 @@ function spawnFloatingText(x, y, text, color='white') {
 }
 
 // --- Loading Screen Logic ---
-window.addEventListener('load', () => {
-    let progress = 0;
-    const interval = setInterval(() => {
-        progress += 2; // Speed of loading bar
-        if (loadingBar) loadingBar.style.width = progress + '%';
-        
-        if (progress >= 100) {
-            clearInterval(interval);
-            loadingScreen.style.opacity = '0';
-            setTimeout(() => {
-                loadingScreen.classList.add('hidden');
-            }, 500);
-        }
-    }, 20); // Update every 20ms
+window.addEventListener('load', async () => {
+    // 1. Wait for all sprites to load
+    try {
+        await Promise.all(spritePromises);
+        console.log("All sprites loaded");
+    } catch (e) {
+        console.error("Error loading sprites", e);
+    }
+    
+    // 2. Simulate a bit of extra loading time for UI feel or ensure bar fills
+    if (loadingBar) loadingBar.style.width = '100%';
+    
+    // 3. Fade out loading screen and start game loop
+    setTimeout(() => {
+        loadingScreen.style.opacity = '0';
+        setTimeout(() => {
+            loadingScreen.classList.add('hidden');
+            // Show the click-to-start screen to get user interaction for sound
+            if (clickToStartScreen) clickToStartScreen.classList.remove('hidden');
+            requestAnimationFrame(loop);
+        }, 500);
+    }, 500);
 });
 
 function updateSessionButtons() {
@@ -315,10 +344,10 @@ function showHomeScreen() {
     pauseBtn.classList.add('hidden'); // Hide pause button on home screen
     if (touchControls) touchControls.classList.add('hidden');
     if (highScoreDisplay) highScoreDisplay.innerText = highScore;
-    updateSessionButtons(); // Update session locks
-    backgroundMusic.stop(); // Stop game music
-    homeMusic.play();       // Play home music
-    canvas.style.display = 'none'; // Hide canvas so home screen appears separately
+    updateSessionButtons(); // Update session locks    
+    // Stop other music and play home music. playMusic handles the switch.
+    playMusic('home');       // Play home music
+    canvas.style.display = 'none'; // Hide canvas so home screen appears separately (and doesn't draw over)
     updateCurrencyDisplay();
 }
 
@@ -374,7 +403,8 @@ function getDifficultyFactor() {
 soundToggle.checked = soundEnabled;
 soundToggle.addEventListener('change', () => {
     soundEnabled = soundToggle.checked;
-    localStorage.setItem('dravexoSoundEnabled', soundEnabled);
+    saveData.soundEnabled = soundEnabled;
+    saveGameData();
 });
 
 // --- Touch Controls Toggle ---
@@ -382,7 +412,8 @@ if (touchToggle) {
     touchToggle.checked = touchEnabled;
     touchToggle.addEventListener('change', () => {
         touchEnabled = touchToggle.checked;
-        localStorage.setItem('dravexoTouchEnabled', touchEnabled);
+        saveData.touchEnabled = touchEnabled;
+        saveGameData();
         // Update visibility immediately if playing
         if (gameState === 'PLAYING' && touchControls) {
             if (touchEnabled) touchControls.classList.remove('hidden');
@@ -392,7 +423,7 @@ if (touchToggle) {
 }
 
 // --- Graphics Toggle Logic ---
-let graphicsMode = localStorage.getItem('dravexoGraphics') || 'auto'; // Default to Smooth for Photos
+let graphicsMode = saveData.graphics || 'auto'; // Default to Smooth for Photos
 
 function applyGraphics() {
     if (graphicsMode === 'pixelated') {
@@ -406,9 +437,10 @@ if (graphicsToggle) {
     graphicsToggle.checked = (graphicsMode === 'pixelated');
     graphicsToggle.addEventListener('change', () => {
         graphicsMode = graphicsToggle.checked ? 'pixelated' : 'auto';
-        localStorage.setItem('dravexoGraphics', graphicsMode);
-        applyGraphics();
-        playSound(uiClickSound);
+        saveData.graphics = graphicsMode;
+        saveGameData();
+        applyGraphics(); // Apply immediately
+        playSound('click');
     });
 }
 applyGraphics(); // Apply on startup
@@ -418,7 +450,8 @@ if (volumeSlider) {
     volumeSlider.value = globalVolume;
     volumeSlider.addEventListener('input', (e) => {
         globalVolume = parseFloat(e.target.value);
-        localStorage.setItem('dravexoVolume', globalVolume);
+        saveData.volume = globalVolume;
+        saveGameData();
     });
 }
 
@@ -427,25 +460,25 @@ if (musicVolumeSlider) {
     musicVolumeSlider.value = musicVolume;
     musicVolumeSlider.addEventListener('input', (e) => {
         musicVolume = parseFloat(e.target.value);
-        localStorage.setItem('dravexoMusicVolume', musicVolume);
-        backgroundMusic.setVolume(musicVolume);
-        homeMusic.setVolume(musicVolume); // Slider controls both
+        saveData.musicVolume = musicVolume;
+        saveGameData();
+        setMusicVolume(musicVolume);
     });
 }
 
 // --- Settings & Tutorial Logic ---
 settingsIconBtn.addEventListener('click', () => {
-    playSound(uiClickSound);
+    playSound('click');
     settingsMenu.classList.remove('hidden');
 });
 
 closeSettingsBtn.addEventListener('click', () => {
-    playSound(uiClickSound);
+    playSound('click');
     settingsMenu.classList.add('hidden');
 });
 
 tutorialBtn.addEventListener('click', () => {
-    playSound(uiClickSound);
+    playSound('click');
     tutorialScreen.classList.remove('hidden');
 });
 
@@ -470,7 +503,7 @@ function selectEditButton(btn) {
 }
 
 function applySavedControls() {
-    const saved = JSON.parse(localStorage.getItem('dravexoControlLayout'));
+    const saved = saveData.controlLayout;
     if (saved) {
         ['left-btn', 'right-btn', 'jump-btn', 'dash-btn', 'grapple-btn'].forEach(id => {
             const btn = document.getElementById(id);
@@ -494,7 +527,7 @@ applySavedControls();
 
 if (editControlsBtn) {
     editControlsBtn.addEventListener('click', () => {
-        playSound(uiClickSound);
+        playSound('click');
         settingsMenu.classList.add('hidden');
         homeScreen.classList.add('hidden'); // Hide home screen to see controls clearly
         
@@ -530,7 +563,7 @@ if (controlSizeSlider) {
 
 if (saveControlsBtn) {
     saveControlsBtn.addEventListener('click', () => {
-        playSound(uiClickSound);
+        playSound('click');
         // Save positions
         const layout = {};
         ['left-btn', 'right-btn', 'jump-btn', 'dash-btn', 'grapple-btn'].forEach(id => {
@@ -551,7 +584,8 @@ if (saveControlsBtn) {
                 btn.style.transform = '';
             }
         });
-        localStorage.setItem('dravexoControlLayout', JSON.stringify(layout));
+        saveData.controlLayout = layout;
+        saveGameData();
         
         isEditingControls = false;
         editUI.classList.add('hidden');
@@ -567,9 +601,10 @@ if (saveControlsBtn) {
 
 if (resetControlsBtn) {
     resetControlsBtn.addEventListener('click', () => {
-        playSound(uiClickSound);
+        playSound('click');
         if (confirm("Reset controls to default positions and size?")) {
-            localStorage.removeItem('dravexoControlLayout');
+            delete saveData.controlLayout;
+            saveGameData();
             
             // Reset styles
             ['left-btn', 'right-btn', 'jump-btn', 'dash-btn', 'grapple-btn'].forEach(id => {
@@ -637,13 +672,13 @@ function makeDraggable(btn) {
 
 if (privacyBtn) {
     privacyBtn.addEventListener('click', () => {
-        playSound(uiClickSound);
+        playSound('click');
         window.location.href = 'privacy.html';
     });
 }
 
 closeTutorialBtn.addEventListener('click', () => {
-    playSound(uiClickSound);
+    playSound('click');
     tutorialScreen.classList.add('hidden');
 });
 
@@ -651,8 +686,9 @@ closeTutorialBtn.addEventListener('click', () => {
 if (resetProgressBtn) {
     resetProgressBtn.addEventListener('click', () => {
         if (confirm("Are you sure you want to lock all levels? This will reset your progress.")) {
-            localStorage.setItem('dravexoMaxLevel', '0');
-            localStorage.setItem('dravexoCurrentLevel', '0');
+            saveData.maxLevel = 0;
+            saveData.currentLevel = 0;
+            saveGameData();
             maxLevelReached = 0;
             if (session2Btn) {
                 session2Btn.disabled = true;
@@ -673,7 +709,7 @@ if (resetProgressBtn) {
             updateSessionButtons();
 
             populateLevelSelect(); // Refresh the buttons to show locks
-            playSound(uiClickSound);
+            playSound('click');
         }
     });
 }
@@ -684,7 +720,7 @@ let currentSessionEnd = 20;
 
 if (session1Btn) {
     session1Btn.addEventListener('click', () => {
-        playSound(uiClickSound);
+        playSound('click');
         currentSessionStart = 0;
         currentSessionEnd = 25;
         document.querySelector('#level-select-screen h2').innerText = "SESSION 1";
@@ -695,7 +731,7 @@ if (session1Btn) {
 }
 
 session2Btn.addEventListener('click', () => {
-    playSound(uiClickSound);
+    playSound('click');
     currentSessionStart = 25;
     currentSessionEnd = 50;
     document.querySelector('#level-select-screen h2').innerText = "SESSION 2";
@@ -706,7 +742,7 @@ session2Btn.addEventListener('click', () => {
 
 if (session3Btn) {
     session3Btn.addEventListener('click', () => {
-        playSound(uiClickSound);
+        playSound('click');
         currentSessionStart = 50;
         currentSessionEnd = 75;
         document.querySelector('#level-select-screen h2').innerText = "SESSION 3";
@@ -717,7 +753,7 @@ if (session3Btn) {
 }
 if (session4Btn) {
     session4Btn.addEventListener('click', () => {
-        playSound(uiClickSound);
+        playSound('click');
         currentSessionStart = 75;
         currentSessionEnd = 100;
         document.querySelector('#level-select-screen h2').innerText = "SESSION 4";
@@ -728,7 +764,7 @@ if (session4Btn) {
 }
 if (session5Btn) {
     session5Btn.addEventListener('click', () => {
-        playSound(uiClickSound);
+        playSound('click');
         currentSessionStart = 100;
         currentSessionEnd = 125;
         document.querySelector('#level-select-screen h2').innerText = "SESSION 5";
@@ -739,13 +775,13 @@ if (session5Btn) {
 }
 
 closeLevelsBtn.addEventListener('click', () => {
-    playSound(uiClickSound);
+    playSound('click');
     levelSelectScreen.classList.add('hidden');
     sessionSelectScreen.classList.remove('hidden'); // Go back to session select
 });
 
 closeSessionsBtn.addEventListener('click', () => {
-    playSound(uiClickSound);
+    playSound('click');
     sessionSelectScreen.classList.add('hidden');
     homeScreen.classList.remove('hidden');
 });
@@ -764,10 +800,9 @@ function populateLevelSelect() {
         } else {
             btn.innerText = index + 1;
             btn.addEventListener('click', () => {
-                playSound(uiClickSound);
-                // Force landscape mode on mobile
-                forceLandscape();
-                homeMusic.stop(); // Stop home music when level starts
+                playSound('click');
+                // Force landscape mode on mobile (Removed - unreliable)
+                // playMusic will handle stopping the old track, so stopMusic() is not needed here.
                 currentLevelIndex = index;
                 score = 0; // Reset score for new run
                 consecutiveLosses = 0; // Reset losses
@@ -775,7 +810,7 @@ function populateLevelSelect() {
                 hideHomeScreen();
                 levelSelectScreen.classList.add('hidden');
                 reset(true); // Keep the level index we just set
-                backgroundMusic.play();
+                playMusic('music');
             });
         }
         levelsContainer.appendChild(btn);
@@ -808,14 +843,14 @@ function showConfirm(title, text, onYes) {
 
 if(messageOkBtn) {
     messageOkBtn.addEventListener('click', () => {
-        playSound(uiClickSound);
+        playSound('click');
         messagePopup.classList.add('hidden');
     });
 }
 
 if(confirmYesBtn) {
     confirmYesBtn.addEventListener('click', () => {
-        playSound(uiClickSound);
+        playSound('click');
         confirmPopup.classList.add('hidden');
         if(confirmCallback) confirmCallback();
         confirmCallback = null;
@@ -824,7 +859,7 @@ if(confirmYesBtn) {
 
 if(confirmNoBtn) {
     confirmNoBtn.addEventListener('click', () => {
-        playSound(uiClickSound);
+        playSound('click');
         confirmPopup.classList.add('hidden');
         confirmCallback = null;
     });
@@ -887,9 +922,10 @@ function populateBackgroundAnimationSelect() {
 
         card.onclick = (e) => {
             if (isUnlocked) {
-                playSound(uiClickSound);
+                playSound('click');
                 selectedBackgroundAnimation = animKey;
-                localStorage.setItem('dravexoBackgroundAnimation', selectedBackgroundAnimation);
+                saveData.backgroundAnimation = selectedBackgroundAnimation;
+                saveGameData();
                 updateBackgroundCache(); // Refresh cache on change
                 populateBackgroundAnimationSelect(); // Refresh UI to show selection
             } else {
@@ -898,17 +934,18 @@ function populateBackgroundAnimationSelect() {
                 if (e.target.closest('.buy-bg-btn')) {
                     if (totalCoins >= anim.price) {
                         showConfirm("UNLOCK BACKGROUND", `Buy ${anim.name} for ${anim.price} Coins?`, () => {
-                            playSound(coinSound);
+                            playSound('coin');
                             totalCoins -= anim.price;
                             unlockedBackgrounds.push(animKey);
                             
                             // Save Data
-                            localStorage.setItem('dravexoTotalCoins', totalCoins);
-                            localStorage.setItem('dravexoUnlockedBackgrounds', JSON.stringify(unlockedBackgrounds));
+                            saveData.totalCoins = totalCoins;
+                            saveData.unlockedBackgrounds = unlockedBackgrounds;
                             
                             // Auto-select
                             selectedBackgroundAnimation = animKey;
-                            localStorage.setItem('dravexoBackgroundAnimation', selectedBackgroundAnimation);
+                            saveData.backgroundAnimation = selectedBackgroundAnimation;
+                            saveGameData();
                             updateBackgroundCache();
                             
                             updateCurrencyDisplay();
@@ -1049,21 +1086,23 @@ function populateLandSelect() {
 
         card.onclick = (e) => {
             if (isUnlocked) {
-                playSound(uiClickSound);
+                playSound('click');
                 selectedLandColor = key;
-                localStorage.setItem('dravexoLandColor', selectedLandColor);
+                saveData.landColor = selectedLandColor;
+                saveGameData();
                 populateLandSelect();
             } else {
                 if (e.target.closest('.buy-bg-btn')) {
                     if (totalCoins >= land.price) {
                         showConfirm("UNLOCK LAND", `Buy ${land.name} for ${land.price} Coins?`, () => {
-                            playSound(coinSound);
+                            playSound('coin');
                             totalCoins -= land.price;
                             unlockedLandColors.push(key);
-                            localStorage.setItem('dravexoTotalCoins', totalCoins);
-                            localStorage.setItem('dravexoUnlockedLandColors', JSON.stringify(unlockedLandColors));
+                            saveData.totalCoins = totalCoins;
+                            saveData.unlockedLandColors = unlockedLandColors;
                             selectedLandColor = key;
-                            localStorage.setItem('dravexoLandColor', selectedLandColor);
+                            saveData.landColor = selectedLandColor;
+                            saveGameData();
                             updateCurrencyDisplay();
                             populateLandSelect();
                             showMessage("SUCCESS", `${land.name} Unlocked!`);
@@ -1242,26 +1281,28 @@ function populateCharacterSelect() {
             option.onclick = (e) => {
                 if (isUnlocked) {
                     // Select Character
-                    playSound(uiClickSound);
+                    playSound('click');
                     selectedCharacter = charKey;
-                    localStorage.setItem('dravexoSelectedCharacter', selectedCharacter);
+                    saveData.selectedCharacter = selectedCharacter;
+                    saveGameData();
                     populateCharacterSelect(); // Refresh UI
                 } else {
                     // Buy Character
                     if (e.target.closest('.buy-char-btn')) {
                         if (totalCoins >= charData.price) {
                             showConfirm("UNLOCK HERO", `Buy ${charData.name} for ${charData.price} Coins?`, () => {
-                                playSound(coinSound);
+                                playSound('coin');
                                 totalCoins -= charData.price;
                                 unlockedCharacters.push(charKey);
                                 
                                 // Save Data
-                                localStorage.setItem('dravexoTotalCoins', totalCoins);
-                                localStorage.setItem('dravexoUnlockedCharacters', JSON.stringify(unlockedCharacters));
+                                saveData.totalCoins = totalCoins;
+                                saveData.unlockedCharacters = unlockedCharacters;
                                 
                                 // Auto-select and refresh
                                 selectedCharacter = charKey;
-                                localStorage.setItem('dravexoSelectedCharacter', selectedCharacter);
+                                saveData.selectedCharacter = selectedCharacter;
+                                saveGameData();
                                 
                                 updateCurrencyDisplay();
                                 populateCharacterSelect();
@@ -1284,7 +1325,7 @@ function populateCharacterSelect() {
 }
 
 characterBtn.addEventListener('click', () => {
-    playSound(uiClickSound);
+    playSound('click');
     homeScreen.classList.add('hidden');
     populateCharacterSelect(); // Refresh selection state
     characterSelectScreen.classList.remove('hidden');
@@ -1293,7 +1334,7 @@ characterBtn.addEventListener('click', () => {
 // --- Background Animation Button Logic ---
 if (bgAnimBtn) {
     bgAnimBtn.addEventListener('click', () => {
-        playSound(uiClickSound);
+        playSound('click');
         homeScreen.classList.add('hidden');
         populateBackgroundAnimationSelect(); // Refresh UI
         backgroundSelectScreen.classList.remove('hidden');
@@ -1302,7 +1343,7 @@ if (bgAnimBtn) {
 
 if (closeBgBtn) {
     closeBgBtn.addEventListener('click', () => {
-        playSound(uiClickSound);
+        playSound('click');
         backgroundSelectScreen.classList.add('hidden');
         homeScreen.classList.remove('hidden');
     });
@@ -1311,7 +1352,7 @@ if (closeBgBtn) {
 // --- Land Button Logic ---
 if (landBtn) {
     landBtn.addEventListener('click', () => {
-        playSound(uiClickSound);
+        playSound('click');
         homeScreen.classList.add('hidden');
         populateLandSelect();
         landSelectScreen.classList.remove('hidden');
@@ -1319,7 +1360,7 @@ if (landBtn) {
 }
 if (closeLandBtn) {
     closeLandBtn.addEventListener('click', () => {
-        playSound(uiClickSound);
+        playSound('click');
         landSelectScreen.classList.add('hidden');
         homeScreen.classList.remove('hidden');
     });
@@ -1335,23 +1376,24 @@ function updateAdButton() {
 if (watchAdBtn) {
     updateAdButton(); // Initial check
     watchAdBtn.addEventListener('click', () => {
-        playSound(uiClickSound);
+        playSound('click');
     });
 }
 
 closeCharacterBtn.addEventListener('click', () => {
-    playSound(uiClickSound);
+    playSound('click');
     characterSelectScreen.classList.add('hidden');
     homeScreen.classList.remove('hidden');
 });
 
 if (randomCharBtn) {
     randomCharBtn.addEventListener('click', () => {
-        playSound(uiClickSound);
+        playSound('click');
         if (unlockedCharacters.length > 0) {
             const randomIndex = Math.floor(Math.random() * unlockedCharacters.length);
             selectedCharacter = unlockedCharacters[randomIndex];
-            localStorage.setItem('dravexoSelectedCharacter', selectedCharacter);
+            saveData.selectedCharacter = selectedCharacter;
+            saveGameData();
             populateCharacterSelect(); // Refresh UI to show selection
         }
     });
@@ -1628,7 +1670,7 @@ const levels = [
         { x: 325, y: 150, w: 150, h: 20 }  // Top Platform
     ],
     enemies: [ 
-        { x: 360, y: 100, w: 80, h: 80, type: 'boss', hp: 15, maxHp: 15, shootTimer: 150, startY: 100 } 
+        { x: 360, y: 100, w: 80, h: 80, type: 'boss', hp: 5, maxHp: 5, shootTimer: 150, startY: 100 } 
     ],
     coins: [],
     powerUps: [ { x: 50, y: 300, w: 25, h: 25, type: 'doubleJump' }, { x: 700, y: 300, w: 25, h: 25, type: 'shield' } ],
@@ -1680,7 +1722,7 @@ const levels = [
         {x:100,y:250,w:150,h:20}, {x:550,y:250,w:150,h:20}, 
         {x:325,y:150,w:150,h:20}
     ],
-    enemies: [{x:600,y:150,w:60,h:60,type:'boss2',hp:35,maxHp:35,timer:0,state:'idle'}],
+    enemies: [{x:600,y:150,w:60,h:60,type:'boss2',hp:7,maxHp:7,timer:0,state:'idle'}],
     coins: [],
     powerUps: [{x:50,y:300,w:25,h:25,type:'shield'}],
     playerStart: {x:50,y:300}, goal: {x:-1000,y:-1000,w:0,h:0}
@@ -1695,6 +1737,14 @@ const levels = [
     playerStart: {x:50,y:300}, goal: {x:-1000,y:-1000,w:0,h:0}
   }
 ];
+
+// --- Level Sanitization ---
+levels.forEach(lvl => {
+    lvl.type = lvl.type || 'normal';
+    lvl.powerUps = lvl.powerUps || [];
+    lvl.checkpoints = lvl.checkpoints || [];
+    lvl.enemies = lvl.enemies || [];
+});
 
 // --- PROCEDURAL LEVEL GENERATOR (To reach 125 Levels) ---
 function generateLevels() {
@@ -1726,7 +1776,9 @@ function generateLevels() {
             // Boss Arena
             newLevel.width = 800;
             newLevel.platforms.push({x:0, y:350, w:800, h:50});
-            newLevel.enemies.push({x:600, y:200, w:60, h:60, type:'boss', hp: 20 + (i/5), maxHp: 20 + (i/5), shootTimer: 100, startY: 200});
+            // Boss 3 (Level 50) starts at 10 HP, then increases slowly (+1 HP every 5 levels roughly)
+            const bossHp = 10 + Math.floor((i - 49) / 5);
+            newLevel.enemies.push({x:600, y:200, w:60, h:60, type:'boss', hp: bossHp, maxHp: bossHp, shootTimer: 100, startY: 200});
             newLevel.goal = {x: -1000, y: -1000, w:0, h:0}; // Hidden goal
         } else {
             // Procedural Platforms
@@ -1736,6 +1788,9 @@ function generateLevels() {
                 const gap = 50 + Math.random() * 100 * difficulty;
                 const width = 80 + Math.random() * 100;
                 const heightChange = (Math.random() - 0.5) * 100;
+                
+                // Add vertical variation
+                if (Math.random() < 0.3) currentY -= 50; // Step up
                 
                 currentX += gap;
                 currentY += heightChange;
@@ -1825,7 +1880,8 @@ function loadLevel(levelIndex) {
   projectiles = []; // Clear projectiles on new level
 
   // Auto-save the current level index so the player can resume later
-  localStorage.setItem('dravexoCurrentLevel', currentLevelIndex);
+  saveData.currentLevel = currentLevelIndex;
+  saveGameData();
 
   // --- Apply Difficulty Scaling to moving platforms ---
   const difficultyFactor = getDifficultyFactor();
@@ -1940,8 +1996,8 @@ function spawnCoins() {
 }
 
 function playerDie() {
-    playSound(deathSound);
-    backgroundMusic.fadeOut(1000); // Fade out music on death instead of stopping abruptly
+    playSound('death');
+    fadeOutMusic(1000); // Fade out music on death instead of stopping abruptly
     // startShake(20, 10); // Screen Shake removed (Vibration hataya)
     consecutiveLosses++; // Increment loss counter
     gameState = 'GAME_OVER';
@@ -1949,7 +2005,8 @@ function playerDie() {
     const finalScore = Math.floor(score / 10);
     if (finalScore > highScore) {
         highScore = finalScore;
-        localStorage.setItem('dravexoHighScore', highScore);
+        saveData.highScore = highScore;
+        saveGameData();
     }
 
     showGameOverMenu(false);
@@ -1995,7 +2052,7 @@ function updateEnemyLogic(enemy, i) {
                 w: 8, h: 8,
                 dx: direction * projectileSpeed,
             });
-            playSound(shootSound);
+            playSound('shoot');
             enemy.shootTimer = enemy.shootCooldown; // Reset cooldown
         }
         break;
@@ -2017,7 +2074,7 @@ function updateEnemyLogic(enemy, i) {
                 x: enemy.x + enemy.w/2, y: enemy.y + enemy.h/2, w: 15, h: 15,
                 dx: Math.cos(angle) * speed, dy: Math.sin(angle) * speed
             });
-            playSound(shootSound);
+            playSound('shoot');
             enemy.shootTimer = (enemy.hp / enemy.maxHp) * 120 + 50; // Shoot slower (Easier)
         }
         break;
@@ -2045,7 +2102,7 @@ function updateEnemyLogic(enemy, i) {
                         dx: Math.cos(angle) * 8, dy: Math.sin(angle) * 8
                     });
                 });
-                playSound(shootSound);
+                playSound('shoot');
             }
             if (enemy.timer > 80) {
                 enemy.state = 'dash';
@@ -2095,7 +2152,7 @@ function handleEnemyCollision(enemy, i) {
 
           if (isStomp || isDashAttack) {
               enemy.hp--;
-              playSound(stompSound);
+              playSound('stomp');
               startShake(5, 5); // Shake on hit
               player.dy = -12; // Big bounce off boss
               
@@ -2110,7 +2167,7 @@ function handleEnemyCollision(enemy, i) {
                   spawnFloatingText(enemy.x, enemy.y, "+5000", "gold");
                   // Spawn Goal in center
                   goal = { x: 400, y: 300, w: 40, h: 60 };
-                  playSound(levelWinSound);
+                  playSound('win');
               }
           } else {
               // Player hit by boss
@@ -2128,14 +2185,14 @@ function handleEnemyCollision(enemy, i) {
         // --- Normal Enemy Logic ---
         if (player.isDashing) {
             enemies.splice(i, 1);
-            playSound(stompSound);
+            playSound('stomp');
             startShake(5, 5);
             score += 150;
             spawnFloatingText(enemy.x, enemy.y, "+150", "#e74c3c");
         } else if (player.dy > 0 && player.y + player.h < enemy.y + 25) {
             enemies.splice(i, 1);
             player.dy = -5;
-            stompSound.play();
+            playSound('stomp');
             startShake(3, 3);
             score += 100;
             spawnFloatingText(enemy.x, enemy.y, "+100", "white");
@@ -2241,7 +2298,7 @@ function update() {
       if (closestHit) {
         player.isGrappling = true;
         player.grapplePoint = closestHit;
-        grappleSound.play();
+        playSound('grapple');
         player.onGround = false;
         player.jumps = 1; // Using grapple counts as a jump
       }
@@ -2254,7 +2311,7 @@ function update() {
     player.isDashing = true;
     player.dashTimer = player.dashDuration; // Use dynamic duration
     player.dashCooldown = DASH_COOLDOWN;
-    dashSound.play();
+    playSound('dash');
   }
 
   if (player.isGrappling) {
@@ -2297,7 +2354,7 @@ function update() {
           player.dy = player.jumpForce; // Use dynamic jump
           player.dx = -player.wallDirection * player.speed * 1.5; // Push away from wall
           player.facingDirection = -player.wallDirection;
-          playSound(jumpSound);
+          playSound('jump');
           player.jumpBuffer = 0; // Consume buffer
 
           // Enemies Jump (Wall Jump)
@@ -2306,7 +2363,7 @@ function update() {
           });
         } else if (player.coyoteTimer > 0 || player.jumps < player.maxJumps) { // Normal / Double Jump (using Coyote)
           player.dy = player.jumpForce; // Use dynamic jump
-          jumpSound.play();
+          playSound('jump');
           player.onGround = false;
           player.jumps++;
           player.jumpBuffer = 0; // Consume buffer
@@ -2357,7 +2414,7 @@ function update() {
         playerDie();
       } else {
         if (player.dy > GRAVITY) {
-            playSound(landSound);
+            playSound('land');
             if (player.dy > 10) startShake(3, 2); // Shake on heavy landing
         }
         player.y = p.y - player.h;
@@ -2434,7 +2491,7 @@ function update() {
       player.y + player.h > coin.y
     ) {
       coins.splice(i, 1); // Remove the coin
-      playSound(coinSound);
+      playSound('coin');
       
       // Midas Ability: Double Coins
       const coinValue = (selectedCharacter === 'gold') ? 20 : 10;
@@ -2442,7 +2499,8 @@ function update() {
 
       score += scoreValue; // Increase score
       totalCoins += coinValue; // Add to persistent wallet
-      localStorage.setItem('dravexoTotalCoins', totalCoins);
+      saveData.totalCoins = totalCoins;
+      saveGameData();
       spawnFloatingText(coin.x, coin.y, "+" + scoreValue, "gold");
     }
   }
@@ -2458,11 +2516,11 @@ function update() {
     ) {
       if (powerUp.type === 'doubleJump') {
         player.maxJumps = 2;
-        playSound(powerUpSound);
+        playSound('powerup');
         spawnFloatingText(powerUp.x, powerUp.y, "DOUBLE JUMP!", "cyan");
       } else if (powerUp.type === 'shield') {
         player.hasShield = true;
-        playSound(powerUpSound);
+        playSound('powerup');
         spawnFloatingText(powerUp.x, powerUp.y, "SHIELD!", "blue");
       }
       powerUps.splice(i, 1); // Remove the power-up
@@ -2483,7 +2541,7 @@ function update() {
           cp.activated = true;
           // Respawn player standing on the ground at the checkpoint's location
           respawnPoint = { x: cp.x, y: cp.y + cp.h - player.h };
-          playSound(powerUpSound); // Reuse sound
+          playSound('powerup'); // Reuse sound
       }
   });
 
@@ -2495,15 +2553,16 @@ function update() {
     player.y < goal.y + goal.h &&
     player.y + player.h > goal.y
   ) {
-    levelWinSound.play();
-    backgroundMusic.stop(); // Stop music on win
+    playSound('win');
+    stopMusic(); // Stop music on win
       consecutiveLosses = 0; // Reset losses on win
       currentLevelIndex++;
       
       // Update max level reached
       if (currentLevelIndex > maxLevelReached) {
           maxLevelReached = currentLevelIndex;
-          localStorage.setItem('dravexoMaxLevel', maxLevelReached);
+          saveData.maxLevel = maxLevelReached;
+          saveGameData();
           populateLevelSelect(); // Update UI
       }
 
@@ -2520,7 +2579,8 @@ function update() {
       const finalScore = Math.floor(score / 10);
       if (finalScore > highScore) {
           highScore = finalScore;
-          localStorage.setItem('dravexoHighScore', highScore);
+          saveData.highScore = highScore;
+          saveGameData();
       }
       showGameOverMenu(true);
     }
@@ -3237,36 +3297,19 @@ function loop(timestamp) {
 }
  
 // Start the game loop
-// Stop any previous music and reset state when the script reloads
-backgroundMusic.stop();
-
-// --- Save Data Function (Prevents Reset on Update) ---
-function saveData() {
-    localStorage.setItem('dravexoHighScore', highScore);
-    localStorage.setItem('dravexoTotalCoins', totalCoins);
-    localStorage.setItem('dravexoMaxLevel', maxLevelReached);
-    localStorage.setItem('dravexoUnlockedCharacters', JSON.stringify(unlockedCharacters));
-    localStorage.setItem('dravexoUnlockedBackgrounds', JSON.stringify(unlockedBackgrounds));
-    localStorage.setItem('dravexoUnlockedLandColors', JSON.stringify(unlockedLandColors));
-    localStorage.setItem('dravexoSelectedCharacter', selectedCharacter);
-    localStorage.setItem('dravexoBackgroundAnimation', selectedBackgroundAnimation);
-    localStorage.setItem('dravexoLandColor', selectedLandColor);
-    localStorage.setItem('dravexoSoundEnabled', soundEnabled);
-    localStorage.setItem('dravexoTouchEnabled', touchEnabled);
-}
+stopMusic(); // Stop any previous music when script reloads
 
 // --- Fix: Stop Sound when Game is Minimized (Mobile Home/Tabs) ---
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
-        saveData(); // Save data immediately when app is minimized/closed
-        if (typeof backgroundMusic !== 'undefined') backgroundMusic.stop();
-        if (typeof homeMusic !== 'undefined') homeMusic.stop();
+        saveGameData(); // Save data immediately when app is minimized/closed
+        stopMusic();
     } else {
         // Resume based on current state
         if (gameState === 'START_SCREEN') {
-            if (typeof homeMusic !== 'undefined') homeMusic.resume();
+            playMusic('home');
         } else if (gameState === 'PLAYING') {
-            if (typeof backgroundMusic !== 'undefined') backgroundMusic.resume();
+            playMusic('music');
         }
     }
 });
@@ -3357,11 +3400,12 @@ function checkDailyReward() {
             claimRewardBtn.innerText = "CLAIMING...";
 
             // Give reward immediately
-            playSound(coinSound);
+            playSound('coin');
             totalCoins += totalReward;
-            localStorage.setItem('dravexoTotalCoins', totalCoins);
-            localStorage.setItem('dravexoLastClaimDate', todayStr);
-            localStorage.setItem('dravexoDailyStreak', displayStreak);
+            saveData.totalCoins = totalCoins;
+            saveData.lastClaimDate = todayStr;
+            saveData.dailyStreak = displayStreak;
+            saveGameData();
             
             updateCurrencyDisplay();
             
@@ -3373,7 +3417,7 @@ function checkDailyReward() {
 
 if (dailyRewardBtn) {
     dailyRewardBtn.addEventListener('click', () => {
-        playSound(uiClickSound);
+        playSound('click');
         checkDailyReward();
     });
 }
@@ -3381,25 +3425,25 @@ if (dailyRewardBtn) {
 if (closeRewardBtn) closeRewardBtn.addEventListener('click', () => dailyRewardPopup.classList.add('hidden'));
 
 if (dailyRewardCloseX) dailyRewardCloseX.addEventListener('click', () => {
-    playSound(uiClickSound);
+    playSound('click');
     dailyRewardPopup.classList.add('hidden');
 });
 
 // --- Game Over / Win Button Logic ---
 restartBtn.addEventListener('click', () => {
-    playSound(uiClickSound);
+    playSound('click');
     gameOverScreen.classList.add('hidden');
     gameState = 'PLAYING';
     
     reset(true); // Restart  
-    backgroundMusic.play();
+    playMusic('music');
     window.focus();
 });
 
 // Skip Level Button Click
 if (skipLevelBtn) {
     skipLevelBtn.addEventListener('click', () => {
-        playSound(uiClickSound);
+        playSound('click');
         
         consecutiveLosses = 0; // Reset losses
         currentLevelIndex++;
@@ -3407,7 +3451,8 @@ if (skipLevelBtn) {
         // Unlock next level
         if (currentLevelIndex > maxLevelReached) {
             maxLevelReached = currentLevelIndex;
-            localStorage.setItem('dravexoMaxLevel', maxLevelReached);
+            saveData.maxLevel = maxLevelReached;
+            saveGameData();
             populateLevelSelect();
         }
 
@@ -3423,7 +3468,7 @@ if (skipLevelBtn) {
                 touchControls.classList.remove('hidden');
             }
 
-            backgroundMusic.play();
+            playMusic('music');
         } else {
             // Game Won (if skipped last level)
             gameState = 'GAME_WON';
@@ -3433,7 +3478,7 @@ if (skipLevelBtn) {
 }
 
 homeBtn.addEventListener('click', () => {
-    playSound(uiClickSound);
+    playSound('click');
     gameOverScreen.classList.add('hidden');
     gameState = 'START_SCREEN';
     showHomeScreen();
@@ -3441,18 +3486,18 @@ homeBtn.addEventListener('click', () => {
 
 // --- Level Complete Button Logic ---
 nextLevelBtn.addEventListener('click', () => {
-    playSound(uiClickSound);
+    playSound('click');
     levelCompleteScreen.classList.add('hidden');
     gameState = 'PLAYING';
     gameUI.classList.remove('hidden');
     pauseBtn.classList.remove('hidden');
     
     loadLevel(currentLevelIndex);
-    backgroundMusic.play();
+    playMusic('music');
 });
 
 levelHomeBtn.addEventListener('click', () => {
-    playSound(uiClickSound);
+    playSound('click');
     gameState = 'START_SCREEN';
     showHomeScreen();
 });
@@ -3460,33 +3505,33 @@ levelHomeBtn.addEventListener('click', () => {
 // --- Pause Menu Logic ---
 pauseBtn.addEventListener('click', () => {
     if (gameState === 'PLAYING') {
-        playSound(uiClickSound);
+        playSound('click');
         gameState = 'PAUSED';
         pauseMenu.classList.remove('hidden');
         if (touchControls) touchControls.classList.add('hidden'); // Always hide on pause
-        backgroundMusic.fadeOut(500);
+        fadeOutMusic(500);
     }
 });
 
 resumeBtn.addEventListener('click', () => {
-    playSound(uiClickSound);
+    playSound('click');
     gameState = 'PLAYING';
     pauseMenu.classList.add('hidden');
     if (touchControls && touchEnabled) {
         touchControls.classList.remove('hidden');
     }
-    backgroundMusic.resume();
+    playMusic('music');
 });
 
 pauseRestartBtn.addEventListener('click', () => {
-    playSound(uiClickSound);
+    playSound('click');
     pauseMenu.classList.add('hidden');
     
     reset(true); // Restart current level
 });
 
 pauseHomeBtn.addEventListener('click', () => {
-    playSound(uiClickSound);
+    playSound('click');
     pauseMenu.classList.add('hidden');
     gameState = 'START_SCREEN';
     showHomeScreen();
@@ -3494,14 +3539,14 @@ pauseHomeBtn.addEventListener('click', () => {
 
 // Start Button Logic
 startBtn.addEventListener('click', () => {
-    playSound(uiClickSound);
-    // Force landscape mode on mobile
-    forceLandscape();
-
+    playSound('click');
+    // The unreliable forceLandscape() function has been removed.
+    
     // Auto-show tutorial for first-time players
-    if (!localStorage.getItem('dravexoTutorialSeen')) {
+    if (!saveData.tutorialSeen) {
         tutorialScreen.classList.remove('hidden');
-        localStorage.setItem('dravexoTutorialSeen', 'true');
+        saveData.tutorialSeen = true;
+        saveGameData();
         return; // Stop here so user sees tutorial first. They will click PLAY again after closing.
     }
     
@@ -3563,41 +3608,25 @@ function setupTouchControls() {
 setupTouchControls();
 
 // --- Auto-Rotate / Force Landscape Logic ---
-async function forceLandscape() {
-    // On many devices, orientation lock only works in fullscreen mode.
-    // We must request fullscreen following a user interaction (like a tap).
-    try {
-        if (document.documentElement.requestFullscreen) {
-            await document.documentElement.requestFullscreen();
-        }
-        // Once in fullscreen, we can try to lock the orientation.
-        if (screen.orientation && screen.orientation.lock) {
-            await screen.orientation.lock('landscape');
-        }
-    } catch (err) {
-        console.warn("Could not enter fullscreen or lock orientation:", err);
-    }
-}
+// The unreliable forceLandscape() function has been removed.
+// A CSS-based warning is now used instead (see style.css and the #orientation-warning div).
 
-// Trigger rotation on first interaction (Touch or Click anywhere)
-window.addEventListener('click', () => {
-    forceLandscape();
-    // Ensure correct music starts on first interaction
-    if (gameState === 'START_SCREEN') homeMusic.resume();
-    else backgroundMusic.resume();
-}, { once: true });
-window.addEventListener('touchstart', () => {
-    forceLandscape();
-    // Ensure correct music starts on first interaction
-    if (gameState === 'START_SCREEN') homeMusic.resume();
-    else backgroundMusic.resume();
-}, { once: true });
+// --- Click to Start Logic (Fix for sound autoplay) ---
+if (realStartBtn) {
+    realStartBtn.addEventListener('click', () => {
+        // This is the first user interaction, so audio will be allowed.
+        clickToStartScreen.classList.add('hidden');
+        // Show the actual home screen, which will handle playing the music.
+        showHomeScreen();
+    });
+}
 
 // --- Auto-Enable Touch Controls on Mobile ---
 window.addEventListener('touchstart', () => {
     if (!touchEnabled) {
         touchEnabled = true;
-        localStorage.setItem('dravexoTouchEnabled', true);
+        saveData.touchEnabled = true;
+        saveGameData();
         if (gameState === 'PLAYING' && touchControls) {
             touchControls.classList.remove('hidden');
         }
@@ -3633,6 +3662,13 @@ checkInternetConnection();
 
 // --- Initial Setup (Moved to end to ensure all functions are defined) ---
 resizeGame(); // Set initial size
+
+// Inject Orientation Warning HTML
+const warningDiv = document.createElement('div');
+warningDiv.id = 'orientation-warning';
+warningDiv.innerHTML = '<h2>Please Rotate Device ↻</h2><p>Landscape mode required</p>';
+document.body.appendChild(warningDiv);
+ 
 generateStars();
 loadLevel(0); // Load level 1 background
 populateCharacterSelect(); // Create character options
@@ -3641,4 +3677,4 @@ populateLevelSelect(); // Create level buttons
 gameState = 'START_SCREEN';
 showHomeScreen(); // Show the new Home Page
 
-requestAnimationFrame(loop);
+// Loop is now started in the load event listener to ensure all assets are ready.
