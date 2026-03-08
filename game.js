@@ -2611,36 +2611,27 @@ function update() {
 }
 
 function draw3DBlock(x, y, w, h, color, depth = 4) {
-    // Side Face (Right) - Shadow
+    // Front Face
     ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(x + w, y);
-    ctx.lineTo(x + w + depth, y - depth);
-    ctx.lineTo(x + w + depth, y + h - depth);
-    ctx.lineTo(x + w, y + h);
-    ctx.fill();
-    ctx.fillStyle = "rgba(0, 0, 0, 0.2)"; // Shadow overlay
-    ctx.fill();
+    ctx.fillRect(x, y, w, h);
 
     // Top Face - Highlight
-    ctx.fillStyle = color;
+    ctx.fillStyle = "rgba(255, 255, 255, 0.3)"; // Highlight overlay
     ctx.beginPath();
     ctx.moveTo(x, y);
     ctx.lineTo(x + depth, y - depth);
     ctx.lineTo(x + w + depth, y - depth);
     ctx.lineTo(x + w, y);
     ctx.fill();
-    ctx.fillStyle = "rgba(255, 255, 255, 0.3)"; // Highlight overlay
-    ctx.fill();
     
-    // Edge definition (Graphics improvement)
-    // ctx.lineWidth = 1; // Removed for performance
-    // ctx.strokeStyle = "rgba(0,0,0,0.15)";
-    // ctx.strokeRect(x, y, w, h);
-
-    // Front Face
-    ctx.fillStyle = color;
-    ctx.fillRect(x, y, w, h);
+    // Side Face (Right) - Shadow
+    ctx.fillStyle = "rgba(0, 0, 0, 0.2)"; // Shadow overlay
+    ctx.beginPath();
+    ctx.moveTo(x + w, y);
+    ctx.lineTo(x + w + depth, y - depth);
+    ctx.lineTo(x + w + depth, y + h - depth);
+    ctx.lineTo(x + w, y + h);
+    ctx.fill();
 }
 
 function draw() {
@@ -2660,7 +2651,7 @@ function draw() {
 
   // --- Draw Game World (translated by camera) ---
   ctx.save();
-  ctx.translate(-camera.x, -camera.y); // Removed Math.round for smoother camera movement
+  ctx.translate(-Math.round(camera.x), -Math.round(camera.y)); // Use integers for better performance
 
   // Draw Shield (if active)
   if (player.hasShield) {
@@ -3316,8 +3307,8 @@ document.addEventListener('visibilitychange', () => {
 
 // --- Daily Reward Logic ---
 function checkDailyReward() {
-    const lastClaimDate = localStorage.getItem('dravexoLastClaimDate');
-    const storedStreak = parseInt(localStorage.getItem('dravexoDailyStreak')) || 0;
+    const lastClaimDate = saveData.lastClaimDate;
+    const storedStreak = parseInt(saveData.dailyStreak) || 0;
     const now = new Date();
     const todayStr = now.toDateString(); // e.g., "Mon Jan 01 2024"
 
