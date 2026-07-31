@@ -1,15 +1,46 @@
 const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const ctx = canvas ? canvas.getContext("2d") : null;
+if (!ctx) {
+    console.error("Canvas context not available!");
+}
 let gameState = 'START_SCREEN'; // Can be: START_SCREEN, PLAYING, GAME_OVER, GAME_WON
 
+// --- Safe localStorage wrapper ---
+function safeGetItem(key, fallback) {
+    try {
+        const val = localStorage.getItem(key);
+        return val !== null ? val : fallback;
+    } catch (e) {
+        console.warn("localStorage getItem failed:", key, e);
+        return fallback;
+    }
+}
+
+function safeSetItem(key, value) {
+    try {
+        localStorage.setItem(key, value);
+    } catch (e) {
+        console.warn("localStorage setItem failed:", key, e);
+    }
+}
+
 // --- Consolidated Save Data ---
-saveData = JSON.parse(localStorage.getItem('dravexoSaveData')) || {};
+// saveData is initialized by sounds.js (window.saveData), just assign to it
+try {
+    saveData = JSON.parse(safeGetItem('dravexoSaveData', '{}')) || {};
+} catch (e) {
+    console.warn("Failed to parse save data", e);
+    saveData = {};
+}
 
 // Migration for old keys (if new data is empty but old exists)
-if (Object.keys(saveData).length === 0 && localStorage.getItem('dravexoHighScore')) {
-    saveData.highScore = parseInt(localStorage.getItem('dravexoHighScore')) || 0;
-    saveData.totalCoins = parseInt(localStorage.getItem('dravexoTotalCoins')) || 0;
-    // ... migrate other keys if needed, or just start fresh with consolidated system
+try {
+    if (Object.keys(saveData).length === 0 && safeGetItem('dravexoHighScore')) {
+        saveData.highScore = parseInt(safeGetItem('dravexoHighScore', '0')) || 0;
+        saveData.totalCoins = parseInt(safeGetItem('dravexoTotalCoins', '0')) || 0;
+    }
+} catch (e) {
+    console.warn("Migration failed", e);
 }
 
 let selectedCharacter = saveData.selectedCharacter || 'cyan';
@@ -55,8 +86,7 @@ spritePromises.push(loadSprite('player_red', 'player_red.png'));
 spritePromises.push(loadSprite('player_gold', 'player_gold.png'));
 spritePromises.push(loadSprite('player_dark', 'player_dark.png'));
 spritePromises.push(loadSprite('player_flyer', 'player_flyer.png'));
-spritePromises.push(loadSprite('player_shooter', 'player_shooter.png'));
-spritePromises.push(loadSprite('player_boss', 'player_boss.png'));
+// Note: player_shooter and player_boss use procedural rendering (no sprite files)
 // Enemies
 spritePromises.push(loadSprite('enemy_patrol', 'enemy_patrol.png'));
 spritePromises.push(loadSprite('enemy_fly', 'enemy_fly.png'));
@@ -243,7 +273,7 @@ window.addEventListener('resize', resizeGame);
 
 // --- Save Data Function ---
 function saveGameData() {
-    localStorage.setItem('dravexoSaveData', JSON.stringify(saveData));
+    safeSetItem('dravexoSaveData', JSON.stringify(saveData));
 }
 
 function updateCurrencyDisplay() {
@@ -1734,7 +1764,7 @@ const levels = [
     enemies: [{x:300,y:320,w:30,h:30,type:'patrol',dx:2,patrol:100}],
     coins: [{x:250,y:250,w:15,h:15}, {x:550,y:200,w:15,h:15}],
     powerUps: [],
-    playerStart: {x:50,y:300}, goal: {x:-1000,y:-1000,w:0,h:0}
+    playerStart: {x:50,y:300}, goal: {x:750,y:200,w:20,h:50}
   }
 ];
 

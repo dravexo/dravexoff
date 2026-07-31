@@ -1762,7 +1762,7 @@ input:checked + .slider:before {
 #confirm-yes-btn { background: #2ecc71; }
 #confirm-no-btn { background: #e74c3c; }
 
-confirm-buttons {
+.confirm-buttons {
   display: flex;
   gap: 20px;
 }

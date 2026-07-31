@@ -1,10 +1,32 @@
 // sounds.js - Dravexo Sound System (तुम्हारे स्टाइल में)
 
-let saveData = {};
+// Safe localStorage wrapper
+function safeGetItem(key, fallback) {
+    try {
+        const val = localStorage.getItem(key);
+        return val !== null ? val : fallback;
+    } catch (e) {
+        console.warn("localStorage getItem failed:", key, e);
+        return fallback;
+    }
+}
+
+function safeSetItem(key, value) {
+    try {
+        localStorage.setItem(key, value);
+    } catch (e) {
+        console.warn("localStorage setItem failed:", key, e);
+    }
+}
+
+// Initialize global saveData (shared with game.js)
+window.saveData = {};
 try {
-    saveData = JSON.parse(localStorage.getItem('dravexoSaveData')) || {};
+    const raw = safeGetItem('dravexoSaveData', '{}');
+    window.saveData = JSON.parse(raw) || {};
 } catch (e) {
-    saveData = {};
+    console.warn("Failed to parse save data in sounds.js", e);
+    window.saveData = {};
 }
 
 // Volume और सेटिंग्स लोड करो
@@ -16,22 +38,52 @@ if (isNaN(musicVolume)) musicVolume = 0.5;
 
 let soundEnabled = saveData.soundEnabled !== false; // डिफ़ॉल्ट true
 
+// Safe audio creation helper
+function createAudio(src) {
+    try {
+        const audio = new Audio(src);
+        // Handle audio loading errors gracefully
+        audio.addEventListener('error', () => {
+            console.warn(`Audio file failed to load: ${src}`);
+        });
+        return audio;
+    } catch (e) {
+        console.warn(`Failed to create Audio for ${src}:`, e);
+        // Return a dummy audio object that won't throw
+        return {
+            play: () => Promise.resolve(),
+            pause: () => {},
+            cloneNode: () => ({
+                play: () => Promise.resolve(),
+                pause: () => {},
+                volume: 0,
+                addEventListener: () => {}
+            }),
+            addEventListener: () => {},
+            volume: 0,
+            currentTime: 0,
+            loop: false,
+            paused: true
+        };
+    }
+}
+
 // --- Sound System --- (बिल्कुल वैसा जैसा तुमने लिखा)
 const sounds = {
-    jump:    new Audio("jump.mpeg"),
-    coin:    new Audio("coin.mpeg"),
-    stomp:   new Audio("stomp.mpeg"),
-    death:   new Audio("death.mpeg"),
-    win:     new Audio("win.mpeg"),
-    powerup: new Audio("powerup.mpeg"),
-    grapple: new Audio("grapple.mpeg"),
-    dash:    new Audio("dash.mpeg"),
-    shoot:   new Audio("laser.mpeg"),
-    click:   new Audio("click.mpeg"),
-    land:    new Audio("land.mpeg"),
+    jump:    createAudio("jump.mpeg"),
+    coin:    createAudio("coin.mpeg"),
+    stomp:   createAudio("stomp.mpeg"),
+    death:   createAudio("death.mpeg"),
+    win:     createAudio("win.mpeg"),
+    powerup: createAudio("powerup.mpeg"),
+    grapple: createAudio("grapple.mpeg"),
+    dash:    createAudio("dash.mpeg"),
+    shoot:   createAudio("laser.mpeg"),
+    click:   createAudio("click.mpeg"),
+    land:    createAudio("land.mpeg"),
     // Music
-    music: new Audio("music.mpeg"),
-    home:  new Audio("home.mpeg")
+    music: createAudio("music.mpeg"),
+    home:  createAudio("home.mpeg")
 };
 
 // Music को लूप कर दो
@@ -119,7 +171,7 @@ function fadeOutMusic(duration = 1000) {
 function setMusicVolume(vol) {
     musicVolume = Math.max(0, Math.min(1, vol));
     saveData.musicVolume = musicVolume;
-    localStorage.setItem('dravexoSaveData', JSON.stringify(saveData));
+    safeSetItem('dravexoSaveData', JSON.stringify(saveData));
 
     if (currentMusic) {
         currentMusic.volume = musicVolume;
@@ -130,7 +182,7 @@ function setMusicVolume(vol) {
 function setGlobalVolume(vol) {
     globalVolume = Math.max(0, Math.min(1, vol));
     saveData.volume = globalVolume;
-    localStorage.setItem('dravexoSaveData', JSON.stringify(saveData));
+    safeSetItem('dravexoSaveData', JSON.stringify(saveData));
     // नए SFX इसी वॉल्यूम से बजेंगे (पुराने क्लोन नहीं बदलेंगे)
 }
 
@@ -138,7 +190,7 @@ function setGlobalVolume(vol) {
 function setSoundEnabled(enabled) {
     soundEnabled = !!enabled;
     saveData.soundEnabled = soundEnabled;
-    localStorage.setItem('dravexoSaveData', JSON.stringify(saveData));
+    safeSetItem('dravexoSaveData', JSON.stringify(saveData));
 
     if (!soundEnabled && currentMusic) {
         currentMusic.pause();
@@ -157,6 +209,6 @@ window.setSoundEnabled = setSoundEnabled;
 // पेज छोड़ते समय सेव कर दो
 window.addEventListener('visibilitychange', () => {
     if (document.hidden) {
-        localStorage.setItem('dravexoSaveData', JSON.stringify(saveData));
+        safeSetItem('dravexoSaveData', JSON.stringify(saveData));
     }
 });
